@@ -1252,6 +1252,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             throw new CloudRuntimeException("Failed to change default nic to " + nic + " and now we have no default");
         } else if (newdefault.getId() == nic.getNetworkId()) {
+            //HUBO: prepareNic for the old and new default nics
+            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmInstance, null, null, null, null);
+            Host host = _hostDao.findById(vmInstance.getHostId());
+            DeployDestination dest = new DeployDestination(dc, null, null, host);
+            CallContext cctx = CallContext.current();
+            ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
+            try {
+                _networkMgr.prepareNic(vmProfile, dest, context, existingVO.getId(), oldDefaultNetwork);
+                _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), network);
+                } catch (InsufficientCapacityException e) {
+                    throw new CloudRuntimeException("Insufficient capacity on setting default nic.", e);
+                } catch (ResourceUnavailableException e) {
+                throw new CloudRuntimeException("Setting default nic failed. Resource is unavailable.", e);
+            }
+            //HUBO: end of prepareNic
             s_logger.debug("successfully set default network to " + network + " for " + vmInstance);
             String nicIdString = Long.toString(nic.getId());
             long newNetworkOfferingId = network.getNetworkOfferingId();
