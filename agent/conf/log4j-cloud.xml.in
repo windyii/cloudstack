@@ -28,7 +28,7 @@ under the License.
    <!-- A time/date based rolling appender -->
    <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
-      <param name="Threshold" value="INFO"/>
+      <param name="Threshold" value="TRACE"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
         <param name="FileNamePattern" value="@AGENTLOG@.%d{yyyy-MM-dd}.gz"/>
         <param name="ActiveFileName" value="@AGENTLOG@"/>
@@ -56,28 +56,28 @@ under the License.
    <!-- ================ -->
 
    <category name="com.cloud">
-     <priority value="INFO"/>
+     <priority value="DEBUG"/>
    </category>
    
    <category name="com.cloud.agent.metrics">
-     <priority value="INFO"/>
+     <priority value="DEBUG"/>
    </category>
    
    <category name="com.cloud.agent.resource.computing.ComputingResource$StorageMonitorTask">
-     <priority value="INFO"/>
+     <priority value="DEBUG"/>
    </category>
 
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
-      <priority value="INFO"/>
+      <priority value="DEBUG"/>
    </category>
 
    <category name="org">
-      <priority value="INFO"/>
+      <priority value="DEBUG"/>
    </category>
    
    <category name="net">
-     <priority value="INFO"/>
+     <priority value="DEBUG"/>
    </category>
 
    <!-- ======================= -->
