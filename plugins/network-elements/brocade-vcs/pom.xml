@@ -40,6 +40,7 @@
 								<include>BrocadeInterfaceSchema.xsd</include>
 							</schemaIncludes>
 							<generatePackage>com.cloud.network.schema.interfacevlan</generatePackage>
+							<args><arg>-no-header</arg></args>
 						</configuration>
 					</execution>
 					<execution>
@@ -54,6 +55,7 @@
 								<include>BrocadePortProfileSchema.xsd</include>
 							</schemaIncludes>
 							<generatePackage>com.cloud.network.schema.portprofile</generatePackage>
+							<args><arg>-no-header</arg></args>
 						</configuration>
 					</execution>
 					<execution>
@@ -68,6 +70,7 @@
 								<include>BrocadeShowVcsSchema.xsd</include>
 							</schemaIncludes>
 							<generatePackage>com.cloud.network.schema.showvcs</generatePackage>
+							<args><arg>-no-header</arg></args>
 						</configuration>
 					</execution>
 				</executions>
