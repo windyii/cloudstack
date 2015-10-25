@@ -275,9 +275,10 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
 
     @Override
-    public IPAddressVO findByVmIp(String vmIp) {
+    public IPAddressVO findByVmIpAndAssociatedNetworkId(String vmIp, long networkId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("associatedVmIp", vmIp);
+        sc.setParameters("associatedNetworkId", networkId);
         return findOneBy(sc);
     }
 
