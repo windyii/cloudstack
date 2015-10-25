@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-. /etc/rc.d/init.d/tomcat6 start
+. /etc/rc.d/init.d/tomcat start

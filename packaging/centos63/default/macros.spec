@@ -17,13 +17,13 @@
 
 %define _pythonparamiko Requires: python-paramiko
 %define _javaversion java-1.7.0-openjdk
-%define _tomcatversion tomcat6
+%define _tomcatversion tomcat => 7.0
 %define _vlanconfigtool vconfig
-%define _tomcatpathname tomcat6
+%define _tomcatpathname tomcat
 %define _managementstartscriptpath %{_initrddir}
 %define _managementservice %{nil}
 %define _managementserviceattribute %{nil}
 %define _iptablesservice %{nil}
-%define _serverxmlname server
+%define _serverxmlname server7
 %define _cloudstackmanagementconf %{nil}
 %define _cloudstackmanagementconfattr %{nil}
