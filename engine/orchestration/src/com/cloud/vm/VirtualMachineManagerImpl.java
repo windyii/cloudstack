@@ -2939,6 +2939,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 if (!result) {
                     s_logger.debug("Removing nic " + nic + " from vm " + vmProfile.getVirtualMachine() + " as nic plug failed on the backend");
                     _networkMgr.removeNic(vmProfile, _nicsDao.findById(nic.getId()));
+                    _nicsDao.expunge(nic.getId());
                 }
             }
         } else if (vm.getState() == State.Stopped) {
