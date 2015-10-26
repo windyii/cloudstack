@@ -533,7 +533,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp) throws ResourceAllocationException, InsufficientAddressCapacityException,
+    public IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, String ipAddress, Long vlanId, Boolean displayIp) throws ResourceAllocationException, InsufficientAddressCapacityException,
             ConcurrentOperationException {
 
         Account caller = CallContext.current().getCallingAccount();
@@ -557,7 +557,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
                         }
-                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
+                        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, ipAddress, vlanId, displayIp);
                     } else {
                         throw new InvalidParameterValueException("Associate IP address can only be called on the shared networks in the advanced zone"
                                 + " with Firewall/Source Nat/Static Nat/Port Forwarding/Load balancing services enabled");

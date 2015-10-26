@@ -163,6 +163,9 @@ public interface IpAddressManager {
     IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp) throws ConcurrentOperationException,
         ResourceAllocationException, InsufficientAddressCapacityException;
 
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, String ipAddress, Long vlanId, Boolean displayIp) throws ConcurrentOperationException,
+    ResourceAllocationException, InsufficientAddressCapacityException;
+
     PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
         boolean isSystem) throws InsufficientAddressCapacityException;
 

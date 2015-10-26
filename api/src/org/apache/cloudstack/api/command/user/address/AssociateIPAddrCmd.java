@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -36,6 +35,7 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -108,6 +108,13 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the ip to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name=ApiConstants.VLAN_ID, type=CommandType.UUID, entityType = VlanIpRangeResponse.class,
+            required=false, description="specify the public ip vlan range")
+    private Long vlanId;
+
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=false, description="specify public ip address")
+    private String ipAddress;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -288,9 +295,17 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         try {
             IpAddress ip = null;
+            Account caller = CallContext.current().getCallingAccount();
 
             if (!isPortable()) {
-                ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNetworkId(), getDisplayIp());
+                if (ipAddress != null || vlanId != null) {
+                    if (!_accountService.isAdmin(caller.getId())) {
+                        throw new PermissionDeniedException("Only administrators can acquire a specified IP address");
+                    }
+                    ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNetworkId(), ipAddress, vlanId, getDisplayIp());
+                } else {
+                    ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNetworkId(), null, null, getDisplayIp());
+                }
             } else {
                 ip = _networkService.allocatePortableIP(_accountService.getAccount(getEntityOwnerId()), 1, getZoneId(), getNetworkId(), getVpcId());
             }

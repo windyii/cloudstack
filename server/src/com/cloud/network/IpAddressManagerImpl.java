@@ -997,6 +997,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             throws ConcurrentOperationException,
         ResourceAllocationException, InsufficientAddressCapacityException {
 
+        return allocateIp(ipOwner, isSystem, caller, callerUserId, zone, null, null, displayIp);
+    }
+
+    @DB
+    @Override
+    public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, long callerUserId, final DataCenter zone, final String ipAddress, final Long vlanId, final Boolean displayIp)
+            throws ConcurrentOperationException,
+        ResourceAllocationException, InsufficientAddressCapacityException {
+
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
 
@@ -1027,7 +1036,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
-                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, null, false, assign, null, isSystem, null, displayIp);
+                    List<Long> vlanIds = new ArrayList<Long>();
+                    vlanIds.add(vlanId);
+                    PublicIp ip = fetchNewPublicIp(zone.getId(), null, vlanIds, ipOwner, vlanType, null, false, assign, ipAddress, isSystem, null, displayIp);
 
             if (ip == null) {
                         InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone
