@@ -118,7 +118,7 @@ fw_entry() {
     do
       local pubIp=$(echo $i | cut -d: -f1)
       local dport=$(echo $i | cut -d: -f2)    
-      sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
+      sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
       success=$?
       if [ $success -gt 0 ]
       then
@@ -195,7 +195,7 @@ do
 done
 
 
-dev=$(getEthByIp $ip)
+#dev=$(getEthByIp $ip)
 
 if [ "$addedIps" == "" ]
 then

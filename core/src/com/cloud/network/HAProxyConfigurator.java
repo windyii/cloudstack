@@ -49,7 +49,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         "\tuser haproxy", "\tgroup haproxy", "\tdaemon"};
 
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-        "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+        "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000", "\tmaxconn 4096"};
 
     private static String[] defaultListen = {"listen  vmops 0.0.0.0:9", "\toption transparent"};
 
@@ -618,7 +618,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 //        note that this is overwritten on the String in the static ArrayList<String>
         gSection.set(2, "\tmaxconn " + lbCmd.maxconn);
         // TODO DH: write test for this function
-        String pipesLine = "\tmaxpipes " + Long.toString(Long.parseLong(lbCmd.maxconn) / 4);
+        String pipesLine = "\tmaxpipes " + lbCmd.maxconn;
         gSection.set(3, pipesLine);
         if (s_logger.isDebugEnabled()) {
             for (String s : gSection) {
@@ -639,6 +639,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             dSection.set(6, "\toption forwardfor");
             dSection.set(7, "\toption forceclose");
         }
+        dSection.set(11, "\tmaxconn " + lbCmd.maxconn);
         if (s_logger.isDebugEnabled()) {
             for (String s : dSection) {
                 s_logger.debug("default section: " + s);

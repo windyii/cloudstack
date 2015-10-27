@@ -297,7 +297,8 @@ public class ConfigHelper {
             args = " -i " + routerIp + args;
             cfg.add(new ScriptConfigItem(VRScripts.LB, args));
         } else {
-            args = " -i " + cmd.getNic().getIp() + args;
+            //Dont need this ip info, LB dont need to use the ACL rule for this ip.
+            //args = " -i " + cmd.getNic().getIp() + args;
             cfg.add(new ScriptConfigItem(VRScripts.VPC_LB, args));
         }
 

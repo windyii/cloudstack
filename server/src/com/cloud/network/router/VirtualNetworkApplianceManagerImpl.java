@@ -3590,9 +3590,13 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
         final Network guestNetwork = _networkModel.getNetwork(guestNetworkId);
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), router.getId());
-        final NicProfile nicProfile =
-                new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
+        final NicProfile nicProfile;
+        if (nic != null) {
+            nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), _networkModel.getNetworkRate(guestNetwork.getId(), router.getId()),
                         _networkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _networkModel.getNetworkTag(router.getHypervisorType(), guestNetwork));
+        } else {
+            nicProfile = null;
+        }
         final NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
@@ -3602,8 +3606,8 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
         }
 
         final LoadBalancerConfigCommand cmd =
-                new LoadBalancerConfigCommand(lbs, routerPublicIp, getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(), _itMgr.toNicTO(
-                        nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+                new LoadBalancerConfigCommand(lbs, routerPublicIp, getRouterIpInNetwork(guestNetworkId, router.getId()), router.getPrivateIpAddress(),
+                        nicProfile == null ? null : _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
