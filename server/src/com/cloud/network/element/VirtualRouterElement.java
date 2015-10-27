@@ -565,6 +565,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor {
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         lbCapabilities.put(Capability.SupportedStickinessMethods, getHAProxyStickinessCapability());
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
+        lbCapabilities.put(Capability.HealthCheckPolicy, "true");
 
         //specifies that LB rules can support autoscaling and the list of counters it supports
         AutoScaleCounter counter;

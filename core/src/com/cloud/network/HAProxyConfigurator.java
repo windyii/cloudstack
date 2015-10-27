@@ -19,6 +19,7 @@
 
 package com.cloud.network;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,12 +27,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
+import com.cloud.agent.api.to.LoadBalancerTO.HealthCheckPolicyTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -447,6 +450,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         String publicIP = lbTO.getSrcIp();
         String publicPort = Integer.toString(lbTO.getSrcPort());
         String algorithm = lbTO.getAlgorithm();
+        String protocol = lbTO.getLbProtocol();
 
         List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
@@ -456,6 +460,46 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
+
+        boolean httpBasedHealthCheck = false;
+        HealthCheckPolicyTO healthCheckPolicy = null;
+        if (lbTO.getHealthCheckPolicies() != null && lbTO.getHealthCheckPolicies().length > 0) {
+            // Only support one policy
+            healthCheckPolicy = lbTO.getHealthCheckPolicies()[0];
+            if (healthCheckPolicy != null && !healthCheckPolicy.isRevoked()) {
+                if (healthCheckPolicy.getpingPath() != null) {
+                    // Enable http check
+                    httpBasedHealthCheck = true;
+                    if (!healthCheckPolicy.getpingPath().isEmpty()) {
+                        String url = healthCheckPolicy.getpingPath();
+                        // Check url encoding
+                        if (!Pattern.matches("[a-zA-Z0-9$-_.+!*()',;/?:@&=%]+", url)) {
+                            // encode url. It is better to check url encoding when creating rules
+                            String safeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$-_.;/?:@&=";
+                            StringBuilder urlBuilder = new StringBuilder();
+                            Charset utf8 = Charset.forName("utf-8");
+                            for (char c : url.toCharArray()) {
+                                if (safeChars.indexOf(c) >= 0) {
+                                    urlBuilder.append(c);
+                                } else {
+                                    for (byte b : (String.valueOf(c)).getBytes(utf8)) {
+                                        urlBuilder.append(String.format("%%%1$02x", b));
+                                    }
+                                }
+                            }
+                            url = urlBuilder.toString();
+                        }
+                        result.add("\toption httpchk " + url);
+                    } else {
+                        result.add("\toption httpchk");
+                    }
+                    result.add("\thttp-check disable-on-404");
+                }
+                if (healthCheckPolicy.getResponseTime() > 0) {
+                    result.add("\ttimeout check " + String.valueOf(healthCheckPolicy.getResponseTime()) + "s");
+                }
+            }
+        }
 
         int i = 0;
         Boolean destsAvailable = false;
@@ -478,6 +522,17 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 .append(":")
                 .append(dest.getDestPort())
                 .append(" check");
+            if (healthCheckPolicy != null) {
+                if (healthCheckPolicy.getHealthcheckInterval() > 0) {
+                    sb.append(" inter ").append(healthCheckPolicy.getHealthcheckInterval()).append("s");
+                }
+                if (healthCheckPolicy.getHealthcheckThresshold() > 0) {
+                    sb.append(" rise ").append(healthCheckPolicy.getHealthcheckThresshold());
+                }
+                if (healthCheckPolicy.getUnhealthThresshold() > 0) {
+                    sb.append(" fall ").append(healthCheckPolicy.getUnhealthThresshold());
+                }
+            }
             dstSubRule.add(sb.toString());
             if (stickinessSubRule != null) {
                 sb.append(" cookie ").append(dest.getDestIp().replace(".", "_")).append('-').append(dest.getDestPort()).toString();
@@ -509,7 +564,22 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if ((stickinessSubRule != null) && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        if ((publicPort.equals(NetUtils.HTTP_PORT) && !keepAliveEnabled) || (httpbasedStickiness)) {
+
+        boolean modeHttp = false;
+        if (protocol == null) {
+            if ((publicPort.equals(NetUtils.HTTP_PORT)
+                    && !keepAliveEnabled
+                      ) || (httpbasedStickiness) || (httpBasedHealthCheck) ) {
+                modeHttp = true;
+            } else {
+                modeHttp = false;
+            }
+        } else if ("http".equalsIgnoreCase(protocol)) {
+            modeHttp = true;
+        } else {
+            modeHttp = false;
+        }
+        if (modeHttp) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());

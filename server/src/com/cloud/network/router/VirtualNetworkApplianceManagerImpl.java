@@ -3577,7 +3577,8 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
             final int srcPort = rule.getSourcePortStart();
             final List<LbDestination> destinations = rule.getDestinations();
             final List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
-            final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies);
+            final LoadBalancerTO lb = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, inline, destinations, stickinessPolicies,
+                  rule.getHealthCheckPolicies(), rule.getLbSslCert(), rule.getLbProtocol());
             lbs[i++] = lb;
         }
         String routerPublicIp = null;
