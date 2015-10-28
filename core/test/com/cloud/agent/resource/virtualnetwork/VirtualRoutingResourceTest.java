@@ -905,7 +905,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             assertEquals(content, "global\n" +
                     "\tlog 127.0.0.1:3914   local0 warning\n" +
                     "\tmaxconn 1000\n" +
-                    "\tmaxpipes 250\n" +
+                    "\tmaxpipes 1000\n" +
                     "\tchroot /var/lib/haproxy\n" +
                     "\tuser haproxy\n" +
                     "\tgroup haproxy\n" +
@@ -922,6 +922,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                     "\ttimeout connect    5000\n" +
                     "\ttimeout client     50000\n" +
                     "\ttimeout server     50000\n" +
+                    "\tmaxconn 1000\n" +
                     "\n" +
                     "listen stats_on_guest 10.1.10.2:8081\n" +
                     "\tmode http\n" +
@@ -954,7 +955,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
             break;
         case 4:
             assertEquals(script, VRScripts.VPC_LB);
-            assertEquals(args, " -i 10.1.10.2 -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
+            assertEquals(args, " -f " + _file + " -a 64.10.1.10:80:, -s 10.1.10.2:8081:0/0:,,");
             break;
         default:
             fail();
