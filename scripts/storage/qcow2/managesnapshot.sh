@@ -223,7 +223,7 @@ backup_snapshot() {
       return 1
     fi
 
-    $qemu_img convert -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
+    $qemu_img convert -f qcow2 -O qcow2  $disk $destPath/$destName >& /dev/null
     if [ $? -gt 0 ]
     then
       printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2
