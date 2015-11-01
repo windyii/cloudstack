@@ -83,7 +83,7 @@ public abstract class ServerResourceBase implements ServerResource {
         _publicNic = getNetworkInterface(publicNic);
         _storageNic = getNetworkInterface(storageNic);
         _storageNic2 = getNetworkInterface(storageNic2);
-        
+
         if (_privateNic != null) {
             String[] infos = NetUtils.getNetworkParams(_privateNic);
             if (infos == null || infos[0] == null) {
@@ -91,7 +91,7 @@ public abstract class ServerResourceBase implements ServerResource {
                 _privateNic = null;
             }
         }
-        
+
         if (_privateNic == null) {
             try {
                 s_logger.warn("Nics are not specified in properties file/db, will try to discover from route");
@@ -108,14 +108,14 @@ public abstract class ServerResourceBase implements ServerResource {
                         } catch (final Exception e) {
                             // Ignore any script exception
                         }
-                        
+
                     }
                 }
             } catch (final Exception e) {
                 s_logger.warn("Failed to discover private nic from route", e);
             }
         }
-        
+
         if (_privateNic == null) {
             s_logger.warn("Nics are not specified in properties file/db, will try to autodiscover");
 
