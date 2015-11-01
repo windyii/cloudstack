@@ -21,6 +21,7 @@ package com.cloud.resource;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -82,7 +83,39 @@ public abstract class ServerResourceBase implements ServerResource {
         _publicNic = getNetworkInterface(publicNic);
         _storageNic = getNetworkInterface(storageNic);
         _storageNic2 = getNetworkInterface(storageNic2);
-
+        
+        if (_privateNic != null) {
+            String[] infos = NetUtils.getNetworkParams(_privateNic);
+            if (infos == null || infos[0] == null) {
+                // This is not the private Nic for server, re-discover
+                _privateNic = null;
+            }
+        }
+        
+        if (_privateNic == null) {
+            try {
+                s_logger.warn("Nics are not specified in properties file/db, will try to discover from route");
+                String host = (String)params.get("host");
+                if (host != null ) {
+                    InetAddress[] hostAddresses = InetAddress.getAllByName((String)params.get("host"));
+                    for (InetAddress addr : hostAddresses) {
+                        try {
+                            String dev = Script.runSimpleBashScript("ip route get " + addr.getHostAddress() + " | grep -o -P \"dev \\S+\" | cut -d \" \" -f 2");
+                            _privateNic = getNetworkInterface(dev);
+                            if (_privateNic != null) {
+                                break;
+                            }
+                        } catch (final Exception e) {
+                            // Ignore any script exception
+                        }
+                        
+                    }
+                }
+            } catch (final Exception e) {
+                s_logger.warn("Failed to discover private nic from route", e);
+            }
+        }
+        
         if (_privateNic == null) {
             s_logger.warn("Nics are not specified in properties file/db, will try to autodiscover");
 
