@@ -1397,7 +1397,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             if (tableName.equals("vm_instance")) {
-                selectSql += " AND state != '" + VirtualMachine.State.Expunging.toString() + "'";
+                selectSql += " AND ( ( vm_type = '" + VirtualMachine.Type.User.toString() + "' AND state != '" + VirtualMachine.State.Expunging.toString() + "' )"
+                        + " OR ( vm_type in ('" + VirtualMachine.Type.DomainRouter.toString() + "', '" + VirtualMachine.Type.ConsoleProxy.toString() + "', '" + VirtualMachine.Type.SecondaryStorageVm.toString() + "') AND state != '" + VirtualMachine.State.Destroyed.toString() + "' ) )";
             }
 
             TransactionLegacy txn = TransactionLegacy.currentTxn();
