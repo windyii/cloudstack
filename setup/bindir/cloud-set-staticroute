@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Init Static Route
+#
+# chkconfig: 345 98 02
+# description: Static Route Download Client
+
+DHCP_LEASES=`ps ax | grep dhclient | grep -o -P '\-lf \S+' | awk '{print $2}'`
+
+DEFAULT_TRAFFIC="10.64.0.0/10 100.67.0.0/16 100.66.0.0/16"
+
+ROUTE=
+
+GATEWAY=
+NIC=
+
+file_count=0
+
+# Get default nic
+DEFAULT_NIC=`ip route list | grep default | grep via | grep -P -o 'dev \S+' | awk '{print $2}'`
+
+# If there is already a route-* config, we will not configure again
+ls /etc/sysconfig/network-scripts/route-* > /dev/null 2>/dev/null && exit 0
+
+for DHCP_FILE in $DHCP_LEASES; do
+	if [ -f $DHCP_FILE ]; then
+		file_count=$((file_count+1))
+		# This is an IP address of VR
+		DHCP_SERVER_IP=$(grep dhcp-server-identifier $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
+		# This is the local IP address
+		LOCAL_IP=$(grep fixed-address $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
+		# This is the broadcast IP address; use it to generate the default gateway
+		BROADCAST_IP=$(grep broadcast-address $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
+		# This is the device name
+		DEVICE=$(grep interface $DHCP_FILE | tail -1 | awk '{print $NF}' | tr -d '\;')
+		DEVICE=${DEVICE#'"'}
+		DEVICE=${DEVICE%'"'}
+		# Retrieve User Data
+		USER_DATA=$(wget -q -t 3 -T 20 -O - http://$DHCP_SERVER_IP/userdata/$LOCAL_IP/user-data)
+		[ "${USER_DATA:0:6}" == "ROUTE=" ] && ROUTE="${USER_DATA:6}"
+		[ "$DEFAULT_NIC" != "$DEVICE" ] && GATEWAY="${BROADCAST_IP%.*}.$((${BROADCAST_IP##*.}-1))" && NIC=$DEVICE
+	fi
+done
+
+# Add default route only when there are two nics on DHCP
+if [ $file_count -eq 2 ]
+then
+	CONFIG_FILE=/etc/sysconfig/network-scripts/route-$NIC
+	if [ "$ROUTE" == "" ]
+	then
+		echo "" >$CONFIG_FILE
+		# Add default traffic
+		for traffic in $DEFAULT_TRAFFIC
+		do
+			echo "$traffic via $GATEWAY dev $NIC" >>$CONFIG_FILE
+			ip route add $traffic via $GATEWAY dev $NIC
+		done
+	else
+		echo "$ROUTE" | tr , "\n" >$CONFIG_FILE
+		/etc/sysconfig/network-scripts/ifup-routes $NIC
+	fi
+	# Disable self
+	chkconfig ${0##*/} off
+fi
