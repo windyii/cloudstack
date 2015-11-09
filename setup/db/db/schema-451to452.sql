@@ -37,3 +37,43 @@ CREATE TABLE `cloud`.`saml_token` (
 SET foreign_key_checks = 0;
 ALTER TABLE `cloud`.`region` MODIFY `id` int unsigned UNIQUE NOT NULL;
 SET foreign_key_checks = 1;
+
+DROP VIEW IF EXISTS `cloud`.`affinity_group_view`;
+CREATE VIEW `cloud`.`affinity_group_view` AS
+    select 
+        affinity_group.id id,
+        affinity_group.name name,
+        affinity_group.type type,
+        affinity_group.description description,
+        affinity_group.uuid uuid,
+		affinity_group.acl_type acl_type,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        vm_instance.id vm_id,
+        vm_instance.uuid vm_uuid,
+        vm_instance.name vm_name,
+        vm_instance.state vm_state,
+        user_vm.display_name vm_display_name
+    from
+        `cloud`.`affinity_group`
+            inner join
+        `cloud`.`account` ON affinity_group.account_id = account.id
+            inner join
+        `cloud`.`domain` ON affinity_group.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`affinity_group_vm_map` ON affinity_group.id = affinity_group_vm_map.affinity_group_id
+            left join
+        `cloud`.`vm_instance` ON vm_instance.id = affinity_group_vm_map.instance_id
+            left join
+        `cloud`.`user_vm` ON user_vm.id = vm_instance.id;
