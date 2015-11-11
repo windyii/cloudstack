@@ -331,10 +331,24 @@ public class ConfigHelper {
         final String vmIpAddress = cmd.getVmIpAddress();
 
         String args = "-v " + vmIpAddress;
-        args += " -p " + password;
+
+        String encodedPassword = shellEncode(password);
+        args += " -p " + encodedPassword;
 
         cfg.add(new ScriptConfigItem(VRScripts.PASSWORD, args));
         return cfg;
+    }
+
+    public static String shellEncode(final String str) {
+        String[] parts = str.split("'", -1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            sb.append("'");
+            sb.append(parts[i]);
+            sb.append("'\"'\"");
+        }
+        sb.setLength(sb.length()-3);
+        return sb.toString();
     }
 
     private static List<ConfigItem> generateConfig(DhcpEntryCommand cmd) {

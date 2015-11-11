@@ -619,6 +619,7 @@ $.extend(dictionary, {
 'message.update.resource.count': '<fmt:message key="message.update.resource.count" />',
 'message.update.ssl': '<fmt:message key="message.update.ssl" />',
 'message.validate.instance.name': '<fmt:message key="message.validate.instance.name" />',
+'message.validate.instance.password': '<fmt:message key="message.validate.instance.password" />',
 'message.virtual.network.desc': '<fmt:message key="message.virtual.network.desc" />',
 'message.vm.create.template.confirm': '<fmt:message key="message.vm.create.template.confirm" />',
 'message.vm.review.launch': '<fmt:message key="message.vm.review.launch" />',

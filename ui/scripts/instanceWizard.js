@@ -974,6 +974,13 @@
             	});
             }
 
+            var password = args.data.password;
+            if (password != null && password.length > 0) {                
+            	$.extend(deployVmData, {
+            		password : password
+            	});
+            }
+
             var group = args.data.groupname;
             if (group != null && group.length > 0) {                
             	$.extend(deployVmData, {

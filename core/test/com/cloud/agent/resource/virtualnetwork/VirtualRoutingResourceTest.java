@@ -733,7 +733,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
 
     private void verifyArgs(SavePasswordCommand cmd, String script, String args) {
         assertEquals(script, VRScripts.PASSWORD);
-        assertEquals(args, "-v 10.1.10.4 -p 123pass");
+        assertEquals(args, "-v 10.1.10.4 -p '123pass'");
     }
 
     @Test
@@ -1120,7 +1120,7 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
         assertEquals(
                 "/opt/cloud/bin/edithosts.sh  -m 12:34:56:78:90:AB -4 10.1.10.2 -h vm1 -6 2001:db8:0:0:0:ff00:42:8329 -u 00:03:00:01:12:34:56:78:90:AB",
                 scripts[25]);
-        assertEquals("/opt/cloud/bin/savepassword.sh -v 10.1.10.4 -p 123pass",
+        assertEquals("/opt/cloud/bin/savepassword.sh -v 10.1.10.4 -p '123pass'",
                 scripts[26]);
         assertEquals(
                 "/opt/cloud/bin/vmdata.py -d eyIxMC4xLjEwLjQiOltbInVzZXJkYXRhIiwidXNlci1kYXRhIiwidXNlci1kYXRhIl0sWyJtZXRhZGF0YSIsInNlcnZpY2Utb2ZmZXJpbmciLCJzZXJ2aWNlT2ZmZXJpbmciXSxbIm1ldGFkYXRhIiwiYXZhaWxhYmlsaXR5LXpvbmUiLCJ6b25lTmFtZSJdLFsibWV0YWRhdGEiLCJsb2NhbC1pcHY0IiwiMTAuMS4xMC40Il0sWyJtZXRhZGF0YSIsImxvY2FsLWhvc3RuYW1lIiwidGVzdC12bSJdLFsibWV0YWRhdGEiLCJwdWJsaWMtaXB2NCIsIjExMC4xLjEwLjQiXSxbIm1ldGFkYXRhIiwicHVibGljLWhvc3RuYW1lIiwiaG9zdG5hbWUiXSxbIm1ldGFkYXRhIiwiaW5zdGFuY2UtaWQiLCJpLTQtVk0iXSxbIm1ldGFkYXRhIiwidm0taWQiLCI0Il0sWyJtZXRhZGF0YSIsInB1YmxpYy1rZXlzIiwicHVibGlja2V5Il0sWyJtZXRhZGF0YSIsImNsb3VkLWlkZW50aWZpZXIiLCJDbG91ZFN0YWNrLXt0ZXN0fSJdXX0=",

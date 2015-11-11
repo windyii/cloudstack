@@ -432,8 +432,17 @@
                                             <input type="text" name="displayname" class="disallowSpecialCharacters" />
                                         </div>
                                     </div>
-                                    <!-- Add to group -->
+                                    <!-- Password -->
                                     <div class="select">
+                                        <div class="name">
+                                            <span><fmt:message key="label.password"/> (<fmt:message key="label.optional"/>)</span>
+                                        </div>
+                                        <div class="value">
+                                            <input type="text" name="password" class="disallowSpecialCharacters" />
+                                        </div>
+                                    </div>
+                                    <!-- Add to group -->
+                                    <div class="select odd">
                                         <div class="name">
                                             <span><fmt:message key="label.add.to.group"/> (<fmt:message key="label.optional"/>)</span>
                                         </div>
@@ -443,7 +452,7 @@
                                     </div>
 
                                     <!-- Keyboard Language -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span>Keyboard language</span>
                                         </div>
@@ -459,7 +468,7 @@
                                     </div>
 
                                     <!-- Zone -->
-                                    <div class="select">
+                                    <div class="select odd">
                                         <div class="name">
                                             <span><fmt:message key="label.zone"/></span>
                                         </div>
@@ -471,7 +480,7 @@
                                         </div>
                                     </div>
                                     <!-- Hypervisor -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span><fmt:message key="label.hypervisor"/></span>
                                         </div>
@@ -483,7 +492,7 @@
                                         </div>
                                     </div>
                                     <!-- Template -->
-                                    <div class="select">
+                                    <div class="select odd">
                                         <div class="name">
                                             <span><fmt:message key="label.template"/></span>
                                         </div>
@@ -495,7 +504,7 @@
                                         </div>
                                     </div>
                                     <!-- Service offering -->
-                                    <div class="select odd">
+                                    <div class="select">
                                         <div class="name">
                                             <span><fmt:message key="label.compute.offering"/></span>
                                         </div>
@@ -507,7 +516,7 @@
                                         </div>
                                     </div>
                                     <!-- Disk offering -->
-                                    <div class="select">
+                                    <div class="select odd">
                                         <div class="name">
                                             <span><fmt:message key="label.disk.offering"/></span>
                                         </div>

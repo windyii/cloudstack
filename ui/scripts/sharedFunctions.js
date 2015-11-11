@@ -891,6 +891,18 @@ cloudStack.validate = {
                 message: 'message.validate.instance.name'
             });
         return b;
+    },
+    vmPassword: function(args) {
+        // 6 ~ 32 characters long
+        // ASCII letters 'a' through 'z', 'A' through 'Z', digits '0' through '9'
+        // Keyboard 0~9 Shift symbols, '-', '+', '_' 
+        var regexp = /^[a-zA-Z0-9!@#$%^&*()\-+_]{6,32}$/;
+        var b = regexp.test(args); //true or false
+        if (b == false)
+            cloudStack.dialog.notice({
+                message: 'message.validate.instance.password'
+            });
+        return b;
     }
 }
 

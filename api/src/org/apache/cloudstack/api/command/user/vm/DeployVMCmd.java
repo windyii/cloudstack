@@ -33,6 +33,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
@@ -189,6 +190,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
 
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description = "password for the virtual machine.")
+    private String password;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -233,6 +237,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
         if (rootdisksize != null && !customparameterMap.containsKey("rootdisksize")) {
             customparameterMap.put("rootdisksize", rootdisksize.toString());
+        }
+        if (password != null) {
+            customparameterMap.put("password", DBEncryptionUtil.encrypt(password));
         }
         return customparameterMap;
     }
@@ -392,6 +399,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
+    public String getPassword() {
+        return password;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -535,6 +546,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
         }
     }
 
+    private void verifyPassword() {
+        if (password != null) {
+            String regex = "^[a-zA-Z0-9!@#$%^&*()\\-+_]{6,32}$";
+            if(!password.matches(regex)) {
+                throw new InvalidParameterValueException("'password' must be in a-zA-Z0-9!@#$%^&*()-+");
+            }
+        }
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
         try {
@@ -542,6 +562,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
             verifyDetails();
+
+            verifyPassword();
 
             DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
             if (zone == null) {

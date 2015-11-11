@@ -1134,6 +1134,12 @@
                                 if (b == false)
                                     return false;
                             }
+                            if ($activeStep.find('input[name=password]').size() > 0 && $activeStep.find('input[name=password]').val().length > 0) {
+                                //validate
+                                var b = cloudStack.validate.vmPassword($activeStep.find('input[name=password]').val());
+                                if (b == false)
+                                    return false;
+                            }
                         }
 
                         if (!$form.valid()) {
