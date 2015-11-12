@@ -277,6 +277,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                             + hostId + " VM HA is done");
                     continue;
                 }
+
+                // Skip HA for user VMs with local storage volumes to avoid stopping them unexpectedly.
+                // VM state may not be right for stop process is skipped.
+                if (!volumeMgr.canVmRestartOnAnotherServer(vm.getId())) {
+                    s_logger.debug("VM " + vm.getInstanceName() + " can not restart on another server. VM HA is done");
+                    continue;
+                }
+
                 scheduleRestart(vm, investigate);
             }
         }
