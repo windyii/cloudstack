@@ -451,7 +451,22 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 return status;
             }
-            return _haMgr.investigate(hostId);
+
+            Status determinedState = _haMgr.investigate(hostId);
+
+            // Give the last chance to the host for it may get up during investigation.
+            if (determinedState == Status.Down) {
+                answer = easySend(hostId, new CheckHealthCommand());
+                if (answer != null && answer.getResult()) {
+                    Status status = Status.Up;
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("agent (" + hostId + ") responded to checkHeathCommand, reporting that agent is " + status);
+                    }
+                    return status;
+                }
+            }
+
+            return determinedState;
         }
         return Status.Alert;
     }
