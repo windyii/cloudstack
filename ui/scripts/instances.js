@@ -907,6 +907,17 @@
                                     displayName: args.data.displayname
                                 });
                             }
+
+                            if (args.data.name != args.context.instances[0].name) {
+                                $.extend(data, {
+                                    name: args.data.name
+                                });
+                            }
+                            var b = cloudStack.validate.vmHostName(args.data.name);
+                            if (b == false) {
+                                return false;
+                            }
+
                             $.ajax({
                                 url: createURL('updateVirtualMachine'),
                                 data: data,
@@ -1756,7 +1767,8 @@
                                 isEditable: true
                             },
                             name: {
-                                label: 'label.host.name'
+                                label: 'label.name',
+                                isEditable: true
                             },
                             state: {
                                 label: 'label.state',
@@ -1893,9 +1905,6 @@
                             created: {
                                 label: 'label.created',
                                 converter: cloudStack.converters.toLocalDate
-                            },
-                            name: {
-                                label: 'label.name'
                             },
                             id: {
                                 label: 'label.id'
