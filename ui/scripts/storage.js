@@ -1890,7 +1890,55 @@
                                             validation: {
                                                 required: true
                                             }
-                                        },                                        
+                                        },
+                                        virtualMachineId: {
+                                            label: 'label.instance',
+                                            select: function(args) {
+                                                var zoneid = args.context.snapshots[0].zoneid;
+                                                var items = [];
+                                                var state = 'Running';
+                                                var data;
+
+                                                if (!args.context.projects) {
+                                                    data = {
+                                                        zoneid: zoneid,
+                                                        domainid: args.context.snapshots[0].domainid,
+                                                        account: args.context.snapshots[0].account,
+                                                        state: state
+                                                    };
+                                                } else {
+                                                    data = {
+                                                        zoneid: zoneid,
+                                                        projectid: args.context.projects[0].id,
+                                                        state: state
+                                                    };
+                                                }
+
+                                                if (args.context.snapshots[0].hypervisor != null && args.context.snapshots[0].hypervisor.length > 0 && args.context.snapshots[0].hypervisor != 'None') {
+                                                    data = $.extend(data, {
+                                                        hypervisor: args.context.snapshots[0].hypervisor
+                                                    });
+                                                }
+
+                                                $.ajax({
+                                                    url: createURL('listVirtualMachines'),
+                                                    data: data,
+                                                    async: false,
+                                                    success: function(json) {
+                                                        var instanceObjs = json.listvirtualmachinesresponse.virtualmachine;
+                                                        $(instanceObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.displayname ? this.displayname : this.name
+                                                            });
+                                                        });
+		                                                args.response.success({
+		                                                    data: items
+		                                                });
+	                                                }
+                                                });
+                                            }
+                                        },
                                         zoneid: {
                                             label: 'label.availability.zone',  
                                             isHidden: true,
@@ -1927,7 +1975,12 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-                                    
+
+                                    if (args.data.virtualMachineId != '') {
+	                                    $.extend(data, {
+	                                    	virtualMachineId: args.data.virtualMachineId
+	                                    });
+                                    }
                                     if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
 	                                    $.extend(data, {
 	                                    	zoneId: args.data.zoneid
