@@ -568,7 +568,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             _accountMgr.checkAccess(caller, null, false, ipOwner);
         }
 
-        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp);
+        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, ipAddress, vlanId, displayIp);
     }
 
     @Override

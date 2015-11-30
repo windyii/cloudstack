@@ -1036,8 +1036,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
-                    List<Long> vlanIds = new ArrayList<Long>();
-                    vlanIds.add(vlanId);
+                    List<Long> vlanIds = null;
+                    if (vlanId != null) {
+                        vlanIds = new ArrayList<Long>();
+                        vlanIds.add(vlanId);
+                    }
                     PublicIp ip = fetchNewPublicIp(zone.getId(), null, vlanIds, ipOwner, vlanType, null, false, assign, ipAddress, isSystem, null, displayIp);
 
             if (ip == null) {
