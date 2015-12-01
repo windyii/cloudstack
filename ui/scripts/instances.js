@@ -1127,6 +1127,15 @@
 
                     resetPassword: {
                         label: 'label.action.reset.password',
+                        createForm: {
+                            title: 'label.action.reset.password',
+                            desc: 'message.action.instance.reset.password',
+                            fields: {
+                                password: {
+                                    label: 'label.password'
+                                }
+                            }
+                        },
                         messages: {
                             confirm: function(args) {
                                 return 'message.action.instance.reset.password';
@@ -1156,8 +1165,21 @@
                         },
 
                         action: function(args) {
+                            var data = {
+                                id: args.context.instances[0].id
+                            };
+                            var password = args.data.password;
+                            if (password != null && password.length > 0) {
+                                if (cloudStack.validate.vmPassword(password) == false) {
+                                    return false;
+                                }
+                                $.extend(data, {
+                                    password : password
+                                });
+                            }
                             $.ajax({
-                                url: createURL("resetPasswordForVirtualMachine&id=" + args.context.instances[0].id),
+                                url: createURL("resetPasswordForVirtualMachine"),
+                                data: data,
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {

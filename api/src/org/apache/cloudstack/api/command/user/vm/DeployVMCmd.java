@@ -548,8 +548,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     private void verifyPassword() {
         if (password != null) {
-            String regex = "^[a-zA-Z0-9!@#$%^&*()\\-+_]{6,32}$";
-            if(!password.matches(regex)) {
+            if(!_userVmService.validVmPassword(password)) {
                 throw new InvalidParameterValueException("'password' must be in a-zA-Z0-9!@#$%^&*()-+");
             }
         }

@@ -42,7 +42,9 @@ public class ResetVMPasswordCmdByAdmin extends ResetVMPasswordCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        password = _mgr.generateRandomPassword();
+        if (password == null) {
+            password = _mgr.generateRandomPassword();
+        }
         CallContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){

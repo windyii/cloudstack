@@ -472,4 +472,6 @@ public interface UserVmService {
      */
     public boolean isDisplayResourceEnabled(Long vmId);
 
+    boolean validVmPassword(String password);
+
 }

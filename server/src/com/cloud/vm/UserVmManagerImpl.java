@@ -535,6 +535,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + cmd.getId());
         }
 
+        if (!validVmPassword(password)) {
+            throw new InvalidParameterValueException("Password for this virtual machine is not valid: " + password);
+        }
+
         _vmDao.loadDetails(userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
@@ -2376,16 +2380,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    protected boolean validPassword(String password) {
+    @Override
+    public boolean validVmPassword(String password) {
         if (password == null || password.length() == 0) {
             return false;
         }
-        for (int i = 0; i < password.length(); i++) {
-            if (password.charAt(i) == ' ') {
-                return false;
-            }
-        }
-        return true;
+        String regex = "^[a-zA-Z0-9!@#$%^&*()\\-+_]{6,32}$";
+        return password.matches(regex);
     }
 
     @Override
@@ -3570,7 +3571,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                  }
             }
 
-            if (!validPassword(password)) {
+            if (!validVmPassword(password)) {
                 throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
             }
 

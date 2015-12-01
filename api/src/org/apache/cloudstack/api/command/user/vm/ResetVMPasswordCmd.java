@@ -56,7 +56,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
+    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, description = "password for the virtual machine.")
     protected String password;
 
 
@@ -117,7 +117,9 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
-        password = _mgr.generateRandomPassword();
+        if (password == null) {
+            password = _mgr.generateRandomPassword();
+        }
         CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
