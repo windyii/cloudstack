@@ -103,7 +103,13 @@ public abstract class ServerResourceBase implements ServerResource {
                             String dev = Script.runSimpleBashScript("ip route get " + addr.getHostAddress() + " | grep -o -P \"dev \\S+\" | cut -d \" \" -f 2");
                             _privateNic = getNetworkInterface(dev);
                             if (_privateNic != null) {
-                                break;
+                                String[] infos = NetUtils.getNetworkParams(_privateNic);
+                                if (infos == null || infos[0] == null) {
+                                    // This is not the private Nic for server, such as lo, re-discover
+                                    _privateNic = null;
+                                } else {
+                                    break;
+                                }
                             }
                         } catch (final Exception e) {
                             // Ignore any script exception
