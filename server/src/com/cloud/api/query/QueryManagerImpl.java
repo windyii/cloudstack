@@ -887,6 +887,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         SearchCriteria<UserVmJoinVO> sc = sb.create();
 
         // building ACL condition
+        if (hostId != null) {
+            listProjectResourcesCriteria = null;
+        }
         _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
                 listProjectResourcesCriteria);
 

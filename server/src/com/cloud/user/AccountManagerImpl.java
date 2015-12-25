@@ -2544,7 +2544,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
-            if (id == null && !listAll && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN)) {
+            if (id == null) {
                 domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
             }
             if (permittedAccounts.isEmpty() && domainId == null) {
