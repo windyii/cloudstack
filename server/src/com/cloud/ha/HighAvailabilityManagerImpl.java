@@ -571,7 +571,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         }
 
         if ((host == null || host.getRemoved() != null || host.getState() != Status.Up)
-                 && !volumeMgr.canVmRestartOnAnotherServer(vm.getId())) {
+                 && !volumeMgr.canVmRestartOnAnotherServer(vm.getId()) && (vm.getLastHostId() != host.getId())) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM can not restart on another server.");
             }
