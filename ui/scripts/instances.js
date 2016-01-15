@@ -725,10 +725,57 @@
                             		return null;
                             }
                         },
+                        createForm: {
+                            title: 'label.reinstall.vm',
+                            desc: _l(dictionary['message.reinstall.vm']),
+                            fields: {
+                                templateId: {
+                                    label: 'label.template',
+                                    select: function(args) {
+                                        $.ajax({
+                                            url: createURL("listTemplates&templatefilter=all&zoneid=" + args.context.instances[0].zoneid),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function(json) {
+                                                if (json.listtemplatesresponse.template!= undefined) {
+                                                    templateObjs = json.listtemplatesresponse.template;
+                                                    var items = [{id: 'unchanged', description: '(unchanged)'}];
+                                                    $(templateObjs).each(function() {
+                                                        if (this.templatetype != "SYSTEM" && this.status == "Download Complete") {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.name
+                                                            });
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                } else {
+                                                    cloudStack.dialog.notice({
+                                                        message: 'no templete found!'
+                                                    }); //Only a single host in the set up
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        },
 
                         action: function(args) {
+                            var data = {
+                                virtualmachineid: args.context.instances[0].id
+                            };
+                            if (args.data.templateId != 'unchanged') {
+                                $.extend(data, {
+                                    templateid : args.data.templateId
+                                });
+                            }
+
                             $.ajax({
-                                url: createURL("restoreVirtualMachine&virtualmachineid=" + args.context.instances[0].id),
+                                url: createURL("restoreVirtualMachine"),
+                                data: data,
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {                                    
