@@ -851,7 +851,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (hostId != null) {
             sb.and().op("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
             sb.or().op("lastHostIdEQ", sb.entity().getLastHostId(), SearchCriteria.Op.EQ);
-            sb.and("lastHostVMStateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
+            sb.and("hostIdNULL", sb.entity().getHostId(), SearchCriteria.Op.NULL);
             sb.cp();
             sb.cp();
         }
@@ -995,7 +995,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (hostId != null) {
             sc.setParameters("hostIdEQ", hostId);
             sc.setParameters("lastHostIdEQ", hostId);
-            sc.setParameters("lastHostVMStateEQ", "Stopped");
         }
 
         if (storageId != null) {
