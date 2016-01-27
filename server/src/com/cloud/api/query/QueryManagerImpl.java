@@ -848,7 +848,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        if (hostId != null) {
+            sb.and().op("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+            sb.or().op("lastHostIdEQ", sb.entity().getLastHostId(), SearchCriteria.Op.EQ);
+            sb.and("lastHostVMStateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
+            sb.cp();
+            sb.cp();
+        }
+
         sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
         sb.and("isoId", sb.entity().getIsoId(), SearchCriteria.Op.EQ);
         sb.and("instanceGroupId", sb.entity().getInstanceGroupId(), SearchCriteria.Op.EQ);
@@ -987,6 +994,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (hostId != null) {
             sc.setParameters("hostIdEQ", hostId);
+            sc.setParameters("lastHostIdEQ", hostId);
+            sc.setParameters("lastHostVMStateEQ", "Stopped");
         }
 
         if (storageId != null) {
