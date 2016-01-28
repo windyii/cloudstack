@@ -65,7 +65,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Restore a VM to orignal template or specific snapshot";
+        return "restoring user vm: " + getId();
     }
 
     @Override
