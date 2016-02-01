@@ -68,6 +68,7 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -229,6 +230,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private DedicatedResourceDao _dedicatedDao;
     @Inject
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    private AlertManager _alertMgr = null;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1699,7 +1702,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         try {
             resourceStateTransitTo(host, ResourceState.Event.InternalCreated, _nodeId);
             /* Agent goes to Connecting status */
+            Status oldStatus = host.getStatus();
             _agentMgr.agentStatusTransitTo(host, Status.Event.AgentConnected, _nodeId);
+
+            if (oldStatus == Status.Down || oldStatus == Status.Alert) {
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host connected, " + host.getId() + "-" + host.getName(),
+                        "Host connected, " + host.getId() + "-" + host.getName() + " " + host.getPrivateIpAddress() + ". It will be up soon.");
+            }
         } catch (Exception e) {
             s_logger.debug("Cannot transmit host " + host.getId() + " to Creating state", e);
             _agentMgr.agentStatusTransitTo(host, Status.Event.Error, _nodeId);

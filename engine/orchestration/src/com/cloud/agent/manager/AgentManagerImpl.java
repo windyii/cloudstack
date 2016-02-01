@@ -1364,6 +1364,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 ResourceState state = host.getResourceState();
                 StringBuilder msg = new StringBuilder("Transition:");
                 msg.append("[Resource state = ").append(state);
+                msg.append(", status = ").append(host.getStatus());
                 msg.append(", Agent event = ").append(e.toString());
                 msg.append(", Host id = ").append(host.getId()).append(", name = " + host.getName()).append("]");
                 status_logger.debug(msg);
