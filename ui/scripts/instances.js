@@ -2071,16 +2071,26 @@
                                                     }
                                                 });
                                             }
+                                        },
+                                        ipaddress: {
+                                            label: 'label.ipaddress',
+                                            validation: {
+                                                required: false
+                                            }
                                         }
                                     }
                                 },
                                 action: function(args) {
-                                    $.ajax({
-                                        url: createURL('addNicToVirtualMachine'),
-                                        data: {
+                                    var para = {
                                             virtualmachineid: args.context.instances[0].id,
                                             networkid: args.data.networkid
-                                        },
+                                         };
+                                         if (args.data.ipaddress) {
+                                             para.ipaddress = args.data.ipaddress;
+                                         }
+                                    $.ajax({
+                                        url: createURL('addNicToVirtualMachine'),
+                                        data: para,
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {
