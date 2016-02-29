@@ -233,14 +233,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 }
                 podsWithCapacity.removeAll(avoid.getPodsToAvoid());
             }
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
-                if (!disabledPods.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the podId list these pods that are disabled: " + disabledPods);
-                    }
-                    podsWithCapacity.removeAll(disabledPods);
+            List<Long> disabledPods = listDisabledPods(plan.getDataCenterId());
+            if (!disabledPods.isEmpty()) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the podId list these pods that are disabled: " + disabledPods);
                 }
+                podsWithCapacity.removeAll(disabledPods);
             }
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -363,20 +361,17 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 }
                 prioritizedClusterIds.removeAll(avoid.getClustersToAvoid());
             }
-
-            if (!isRootAdmin(vmProfile)) {
-                List<Long> disabledClusters = new ArrayList<Long>();
-                if (isZone) {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
-                } else {
-                    disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
+            List<Long> disabledClusters = new ArrayList<Long>();
+            if (isZone) {
+                disabledClusters = listDisabledClusters(plan.getDataCenterId(), null);
+            } else {
+                disabledClusters = listDisabledClusters(plan.getDataCenterId(), id);
+            }
+            if (!disabledClusters.isEmpty()) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: " + disabledClusters);
                 }
-                if (!disabledClusters.isEmpty()) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Removing from the clusterId list these clusters that are disabled/clusters under disabled pods: " + disabledClusters);
-                    }
-                    prioritizedClusterIds.removeAll(disabledClusters);
-                }
+                prioritizedClusterIds.removeAll(disabledClusters);
             }
 
             removeClustersCrossingThreshold(prioritizedClusterIds, avoid, vmProfile, plan);
