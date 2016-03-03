@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
@@ -75,6 +76,7 @@ public class RecoverVMCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.recoverVirtualMachine(this);
         if (result != null){
             UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", result).get(0);
