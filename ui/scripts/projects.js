@@ -1003,6 +1003,9 @@
                                         label: 'label.name'
                                     }
                                 }, {
+                                    id: {
+                                        label: 'label.id'
+                                    },
                                     displaytext: {
                                         label: 'label.display.name',
                                         isEditable: true
