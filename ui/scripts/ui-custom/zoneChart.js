@@ -349,8 +349,103 @@
                 var $chartItems = $('<ul>');
                 var $stats = $('<div>').addClass('stats');
                 var $container = $('<div>').addClass('dashboard-container head');
-                var $top = $('<div>').addClass('top');
+                var $top = $('<div>').addClass('name');
                 var $title = $('<div>').addClass('title').append($('<span>').html(_l('label.system.wide.capacity')));
+
+                var $select = $('<div>').css({'float':'right'}).addClass('capacity');
+                var $zoneLabel = $('<label>').html(_l('label.zone') + ' ');
+                var $zoneSel = $('<select>');
+                var $podLabel = $('<label>').html(' ' + _l('label.pod') + ' ');
+                var $podSel = $('<select>');
+                var $clusterLabel = $('<label>').html(' ' + _l('label.cluster') + ' ');
+                var $clusterSel = $('<select>');
+                $select.append($zoneLabel, $zoneSel, $podLabel, $podSel, $clusterLabel, $clusterSel);
+                $top.append($select);
+
+                var getZones = function(){
+                    args.context.zones[0].podid = '';
+                    args.context.zones[0].clusterid = '';
+                    $zoneSel.html('');
+                    $podSel.html('');
+                    $clusterSel.html('');
+                    $.ajax({
+                        url: createURL('listZones'),
+                        data: {listAll: true},
+                        async: true,
+                        success: function(json) {
+                            var zones = json.listzonesresponse.zone ? json.listzonesresponse.zone : [];
+                            $(zones).map(function(index, zone) {
+                                var $option = $('<option>').val(_s(zone.id)).html(_s(zone.name));
+                                $option.appendTo($zoneSel);
+                            });
+                            $zoneSel.val(args.context.zones[0].id);
+                            getpods();
+                        }
+                    });
+                };
+
+                $zoneSel.change(function(){
+                    args.context.zones[0].id = this.value;
+                    getpods();
+                });
+
+                getZones();
+
+                var getpods = function(){
+                    args.context.zones[0].podid = '';
+                    args.context.zones[0].clusterid = '';
+                    $podSel.html('');
+                    $clusterSel.html('');
+                    $podSel.append($('<option>').attr({'value':'',selected:'true'}).html(_l('ui.listView.filters.all')) );
+                    $podSel.val('');
+                    $.ajax({
+                        url: createURL("listPods&zoneid=" + args.context.zones[0].id),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                            var pods = json.listpodsresponse.pod ? json.listpodsresponse.pod : [];
+                            $(pods).map(function(index, pod) {
+                                var $option = $('<option>').val(_s(pod.id)).html(_s(pod.name));
+                                $option.appendTo($podSel);
+                            });
+                            getclusters();
+                        }
+                    });
+                };
+
+                $podSel.change(function(){
+                    args.context.zones[0].podid = this.value;
+                    getclusters();
+                });
+
+                var getclusters = function(){
+                    args.context.zones[0].clusterid = '';
+                    $clusterSel.html('');
+                    $clusterSel.append($('<option>').attr({'value': '',selected:'true'}).html(_l('ui.listView.filters.all')) );
+                    $clusterSel.val('');
+                    if(args.context.zones[0].podid !=''){
+                        $.ajax({
+                            url: createURL("listClusters&podid=" + args.context.zones[0].podid),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var clusters = json.listclustersresponse.cluster ? json.listclustersresponse.cluster : [];
+                                $(clusters).map(function(index, cluster) {
+                                    var $option = $('<option>').val(_s(cluster.id)).html(_s(cluster.name));
+                                    $option.appendTo($clusterSel);
+                                });
+                                getData();
+                            }
+                        });
+                    }else{
+                        getData();
+                    }
+                };
+
+                $clusterSel.change(function(){
+                    args.context.zones[0].clusterid = this.value;
+                    getData();
+                });
 
                 var chartItems = {
                     // The keys are based on the internal type ID associated with each capacity
@@ -394,53 +489,54 @@
                 $chart.append($container);
                 var $loading = $('<div>').addClass('loading-overlay').prependTo($chart);
 
-                cloudStack.sections.system.zoneDashboard({
-                    context: args.context,
-                    response: {
-                        success: function(args) {
-                            $loading.remove();
-                            $.each(chartItems, function(id, chartItem) {
-                                var data = args.data[id] ? args.data[id] : {
-                                    used: 0,
-                                    total: 0,
-                                    percent: 0
-                                };
-                                var $item = $('<li>');
-                                var $name = $('<div>').addClass('name').html(chartItem.name);
-                                var $value = $('<div>').addClass('value');
-                                var $content = $('<div>').addClass('content').html('Allocated: ');
-                                var $allocatedValue = $('<span>').addClass('allocated').html(data.used);
-                                var $totalValue = $('<span>').addClass('total').html(data.total);
-                                var $chart = $('<div>').addClass('chart');
-                                var $chartLine = $('<div>').addClass('chart-line')
+                function getData(){
+                    $chartItems.html('');
+                    cloudStack.sections.system.zoneDashboard({
+                        context: args.context,
+                        response: {
+                            success: function(args) {
+                                $loading.remove();
+                                $.each(chartItems, function(id, chartItem) {
+                                    var data = args.data[id] ? args.data[id] : {
+                                        used: 0,
+                                        total: 0,
+                                        percent: 0
+                                    };
+                                    var $item = $('<li>');
+                                    var $name = $('<div>').addClass('name').html(chartItem.name);
+                                    var $value = $('<div>').addClass('value');
+                                    var $content = $('<div>').addClass('content').html('Allocated: ');
+                                    var $allocatedValue = $('<span>').addClass('allocated').html(data.used);
+                                    var $totalValue = $('<span>').addClass('total').html(data.total);
+                                    var $chart = $('<div>').addClass('chart');
+                                    var $chartLine = $('<div>').addClass('chart-line')
                                     .css({
                                         width: '0%'
                                     })
                                     .animate({
-                                        width: data.percent + '%'
+                                        width: data.percent < 100 ? data.percent : 100 + '%'
                                     });
-                                var $percent = $('<div>').addClass('percentage');
-                                var $percentValue = $('<soan>').addClass('value').html(data.percent);
-
-                                $chartItems.append(
-                                    $item.append(
-                                        $name,
-                                        $value.append(
-                                            $content.append(
-                                                $allocatedValue,
-                                                ' / ',
-                                                $totalValue
+                                    var $percent = $('<div>').addClass('percentage');
+                                    var $percentValue = $('<soan>').addClass('value').html(data.percent);
+                                    $chartItems.append(
+                                            $item.append(
+                                                    $name,
+                                                    $value.append(
+                                                            $content.append(
+                                                                    $allocatedValue,
+                                                                    ' / ',
+                                                                    $totalValue
+                                                            )
+                                                    ),
+                                                    $chart.append($chartLine),
+                                                    $percent.append($percentValue, '%')
                                             )
-                                        ),
-                                        $chart.append($chartLine),
-                                        $percent.append($percentValue, '%')
-                                    )
-                                );
-                            });
+                                    );
+                                });
+                            }
                         }
-                    }
-                });
-
+                    });
+                };
                 return $chart;
             }
         };

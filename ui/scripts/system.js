@@ -487,11 +487,18 @@
         },
         
         zoneDashboard: function (args) {
+            var para = {
+                    zoneid: args.context.zones[0].id
+                 };
+            if (args.context.zones[0].podid) {
+                para.podid = args.context.zones[0].podid;
+            }
+            if (args.context.zones[0].clusterid) {
+                para.clusterid = args.context.zones[0].clusterid;
+            }
             $.ajax({
                 url: createURL('listCapacity'),
-                data: {
-                    zoneid: args.context.zones[0].id
-                },
+                data: para,
                 success: function (json) {
                     var capacities = json.listcapacityresponse.capacity;
                     var data = {
