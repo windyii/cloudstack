@@ -53,6 +53,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     static final String RouterTemplateLxcCK = "router.template.lxc";
     static final String SetServiceMonitorCK = "network.router.EnableServiceMonitoring";
     static final String RouterAlertsCheckIntervalCK = "router.alerts.check.interval";
+    static final String RouterAlertsCheckTimesCK = "router.alerts.check.times";
     static final String RouterReprovisionOnOutOfBandMigrationCK = "router.reboot.when.outofband.migrated";
 
     static final ConfigKey<String> RouterTemplateXen = new ConfigKey<String>(String.class, RouterTemplateXenCK, "Advanced", "SystemVM Template (XenServer)",
@@ -69,6 +70,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
             "service monitoring in router enable/disable option, default true", true, ConfigKey.Scope.Zone, null);
     static final ConfigKey<Integer> RouterAlertsCheckInterval = new ConfigKey<Integer>(Integer.class, RouterAlertsCheckIntervalCK, "Advanced", "1800",
             "Interval (in seconds) to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Integer> RouterAlertsCheckTimes = new ConfigKey<Integer>(Integer.class, RouterAlertsCheckTimesCK, "Advanced", "3",
+            "Times to check for alerts in Virtual Router.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Boolean> routerVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
             "If true, router minimum required version is checked before sending command", false);
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",

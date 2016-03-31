@@ -442,6 +442,8 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
     BlockingQueue<Long> _vrUpdateQueue = null;
 
+    private List<RouterSendAlertTimes> listRouterSendAlertTimes = new ArrayList<RouterSendAlertTimes>();
+
     @Override
     public boolean sendSshKeysToHost(final Long hostId, final String pubKey, final String prvKey) {
         final ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
@@ -4463,7 +4465,7 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, RouterReprovisionOnOutOfBandMigration};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled, SetServiceMonitor, RouterAlertsCheckInterval, RouterReprovisionOnOutOfBandMigration, RouterAlertsCheckTimes};
     }
 
     @Override
@@ -4489,11 +4491,33 @@ VirtualMachineGuru, Listener, Configurable, StateListener<State, VirtualMachine.
                 final String title = "Router has been migrated out of band: " + vo.getInstanceName();
                 final String context =
                         "An out of band migration of router " + vo.getInstanceName() + "(" + vo.getUuid() + ") was detected. No automated action was performed.";
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vo.getDataCenterId(), vo.getPodIdToDeployIn(), title, context);
+                RouterSendAlertTimes routerSentAlertTimes = findRouterSendAlertTimesByName(vo.getInstanceName());
+                int times = routerSentAlertTimes.getAlertTimes();
+                if(times < RouterAlertsCheckTimes.value()) {
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, vo.getDataCenterId(), vo.getPodIdToDeployIn(), title, context);
+                    routerSentAlertTimes.setAlertTimes();
+                    s_logger.info("It has been send alert emails for VM " + vo.getInstanceName() + ". The times is " + times);
+                }
+            }
+        }
+        return true;
+    }
+
+    private RouterSendAlertTimes findRouterSendAlertTimesByName(String instanceName) {
+        RouterSendAlertTimes routerSendAlertTimes = null;
+        for (RouterSendAlertTimes temp : listRouterSendAlertTimes) {
+            if (temp.getInstanceName().equals(instanceName)) {
+                routerSendAlertTimes = temp;
+                break;
             }
         }
 
-        return true;
+        if(routerSendAlertTimes == null) {
+            routerSendAlertTimes = new RouterSendAlertTimes(instanceName);
+            listRouterSendAlertTimes.add(routerSendAlertTimes);
+        }
+
+        return routerSendAlertTimes;
     }
 
     private boolean isOutOfBandMigrated(Object opaque) {
