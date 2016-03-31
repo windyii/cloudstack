@@ -1977,6 +1977,9 @@
                             },
                             id: {
                                 label: 'label.id'
+                            },
+                            projectdisplaytext: {
+                                label: 'label.project'
                             }
                         }],
 
@@ -2009,7 +2012,18 @@
                                         else
                                             jsonObj.xenserverToolsVersion61plus = false;
                                     }
-                                                                   
+                                    if (jsonObj.projectid) {
+                                        $.ajax({
+                                            url: createURL('listProjects&id=' + jsonObj.projectid),
+                                            dataType: 'json',
+                                            async: false,
+                                            success: function(json) {
+                                                if (json.listprojectsresponse.project != null && json.listprojectsresponse.project.length > 0) {
+                                                    jsonObj.projectdisplaytext = json.listprojectsresponse.project[0].displaytext;
+                                                }
+                                            }
+                                        });
+                                    }
                                     args.response.success({
                                         actionFilter: vmActionfilter,
                                         data: jsonObj
