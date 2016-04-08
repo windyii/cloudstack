@@ -61,18 +61,41 @@
                             <!-- User name -->
                             <div class="field username">
                                 <label for="username"><fmt:message key="label.username"/></label>
-                                <input type="text" name="username" class="required" />
+                                <input type="text" name="username" class="required" autocomplete="off"/>
                             </div>
                             <!-- Password -->
                             <div class="field password">
-                                <label for="password"><fmt:message key="label.password"/></label>
-                                <input type="password" name="password" class="required" autocomplete="off" />
+                                <label for="temp"><fmt:message key="label.password"/></label>
+                                <input type="text" name="temp" class="required" autocomplete="off" onfocus="foc(this.form)" onkeyup="keyup(this.form)"/>
                             </div>
                             <!-- Domain -->
                             <div class="field domain">
                                 <label for="domain"><fmt:message key="label.domain"/></label>
-                                <input type="text" name="domain" />
+                                <input type="text" name="domain" autocomplete="off"/>
                             </div>
+                            <input type="hidden" name="password" style="display:none;">
+                            <script type="text/javascript">
+                                function foc(form){
+                                    form.temp.value="";
+                                    form.password.value="";
+                                }
+                                function keyup(form){
+                                    var pwdLength=form.password.value.length;
+                                    var tempLength=form.temp.value.length;
+                                    if(tempLength>pwdLength){
+                                        form.password.value=form.password.value+form.temp.value.substr(pwdLength,tempLength-pwdLength);
+                                        }
+                                    else{
+                                        if(pwdLength>0 && form.temp.value.substr(-1)!="•"){
+                                            form.password.value=form.password.value.substr(0,tempLength-1)+form.temp.value.substr(tempLength-1);
+                                        }
+                                        if(pwdLength!=tempLength && form.temp.value.substr(-1)=="•"){
+                                            form.password.value=form.password.value.substr(0,tempLength);
+                                        }
+                                    }
+                                    form.temp.value=form.temp.value.replace(/./g, "•");
+                                }
+                            </script>
                         </div>
 
                         <div id="login-submit">
