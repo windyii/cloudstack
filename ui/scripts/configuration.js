@@ -841,10 +841,7 @@
                                         label: 'label.num.cpu.cores'
                                     },
                                     cpuspeed: {
-                                        label: 'label.cpu.mhz',
-                                        converter: function(args) {
-                                            return cloudStack.converters.convertHz(args);
-                                        }
+                                        label: 'label.cpu.mhz'
                                     },
                                     memory: {
                                         label: 'label.memory.mb',
@@ -962,7 +959,9 @@
                                                 item.pciDevice = item.serviceofferingdetails.pciDevice;
                                                 item.vgpuType = item.serviceofferingdetails.vgpuType;
                                             }
-
+                                            if (item.cpuspeed != null) {
+                                                item.cpuspeed = item.cpuspeed + " MHz";
+                                            }
                                             args.response.success({
                                                 actionFilter: serviceOfferingActionfilter,
                                                 data: item
@@ -1431,10 +1430,7 @@
                                         label: 'label.num.cpu.cores'
                                     },
                                     cpuspeed: {
-                                        label: 'label.cpu.mhz',
-                                        converter: function(args) {
-                                            return cloudStack.converters.convertHz(args);
-                                        }
+                                        label: 'label.cpu.mhz'
                                     },
                                     memory: {
                                         label: 'label.memory.mb',
@@ -1493,6 +1489,9 @@
                                         data: data,
                                         success: function(json) {
                                             var item = json.listserviceofferingsresponse.serviceoffering[0];
+                                            if (item.cpuspeed != null) {
+                                                item.cpuspeed = item.cpuspeed + " MHz";
+                                            }
                                             args.response.success({
                                                 actionFilter: systemServiceOfferingActionfilter,
                                                 data: item
