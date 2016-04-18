@@ -104,6 +104,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the name of the host for the virtual machine")
     private String hostName;
 
+    @SerializedName("hostipaddress")
+    @Param(description = "the private ip address of the host for the virtual machine")
+    private String hostIpAddress;
+
     @SerializedName(ApiConstants.TEMPLATE_ID)
     @Param(description = "the ID of the template for the virtual machine. A -1 is returned if the virtual machine was created from an ISO file.")
     private String templateId;
@@ -367,6 +371,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return hostName;
     }
 
+    public String getHostIpAddress() {
+        return hostIpAddress;
+    }
+
     public String getTemplateId() {
         return templateId;
     }
@@ -579,6 +587,10 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setHostName(String hostName) {
         this.hostName = hostName;
+    }
+
+    public void setHostIpAddress(String hostIpAddress) {
+        this.hostIpAddress = hostIpAddress;
     }
 
     public void setTemplateId(String templateId) {

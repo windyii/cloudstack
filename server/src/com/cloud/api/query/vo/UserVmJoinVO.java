@@ -162,6 +162,9 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "host_name", nullable = false)
     private String hostName;
 
+    @Column(name = "host_ip_address")
+    private String hostIpAddress;
+
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
 
@@ -581,6 +584,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getHostName() {
         return hostName;
+    }
+
+    public String getHostIpAddress() {
+        return hostIpAddress;
     }
 
     public long getTemplateId() {
