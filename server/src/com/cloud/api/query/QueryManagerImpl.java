@@ -1217,6 +1217,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("networkName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("ipAddress", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("instanceName", SearchCriteria.Op.SC, ssc);
         }
