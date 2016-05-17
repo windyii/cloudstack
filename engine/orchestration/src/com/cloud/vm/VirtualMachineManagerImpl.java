@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +40,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -317,6 +317,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected AsyncJobManager _jobMgr;
 
+    private final Map<Long, VMInstanceVO> _processingWorkMap = new HashMap<Long, VMInstanceVO>();
+
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
@@ -354,6 +356,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             "Interval to send application level pings to make sure the connection is still working", false);
 
     ScheduledExecutorService _executor = null;
+
+    ExecutorService _vmStopWorkExecuter = null;
 
     protected long _nodeId;
 
@@ -585,6 +589,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VmWorkMigrate.init(_entityMgr);
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
+        _vmStopWorkExecuter = Executors.newCachedThreadPool(new NamedThreadFactory("Vm-Stop-Worker"));
         _nodeId = ManagementServerNode.getManagementServerId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
@@ -3732,26 +3737,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     s_logger.info("VM " + vm.getInstanceName() + " already has an pending HA task working on it");
                 return;
             }
-
-            VirtualMachineGuru vmGuru = getVmGuru(vm);
-            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-            if (!sendStop(vmGuru, profile, true, true)) {
-                // In case StopCommand fails, don't proceed further
-                return;
-            }
-
-            try {
-                stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
-            } catch (NoTransitionException e) {
-                s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
-            }
-
-            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
-                    VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
-                            + " -> Stopped) from out-of-context transition.");
-
-            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-off report from hypervisor");
-
+            scheduleVmStopWork(vm);
             break;
 
         case Destroyed:
@@ -3761,6 +3747,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         case Error:
         default:
             break;
+        }
+    }
+
+    private void scheduleVmStopWork(final VMInstanceVO vm) {
+        synchronized (_processingWorkMap) {
+            if (_processingWorkMap.get(vm.getId()) != null) {
+                return;
+            } else {
+                _processingWorkMap.put(vm.getId(), vm);
+                _vmStopWorkExecuter.execute(new ManagedContextRunnable() {
+                    @Override
+                    protected void runInContext() {
+                        try {
+                            s_logger.debug("Processing vm stop work task: " + vm.getHostName());
+                            VirtualMachineGuru vmGuru = getVmGuru(vm);
+                            VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+                            if (!sendStop(vmGuru, profile, true, true)) {
+                                // In case StopCommand fails, don't proceed further
+                                return;
+                            }
+
+                            try {
+                                stateTransitTo(vm, VirtualMachine.Event.FollowAgentPowerOffReport, null);
+                            } catch (NoTransitionException e) {
+                                s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
+                            }
+
+                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                                    VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState()
+                                    + " -> Stopped) from out-of-context transition.");
+
+                            s_logger.info("VM " + vm.getInstanceName() + " is sync-ed to at Stopped state according to power-off report from hypervisor");
+
+                        } catch (Throwable e) {
+                            s_logger.error("Unexcpeted exception: ", e);
+                        } finally {
+                            synchronized (_processingWorkMap) {
+                                _processingWorkMap.remove(vm.getId());
+                            }
+                        }
+                    }
+                });
+            }
         }
     }
 
