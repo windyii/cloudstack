@@ -105,6 +105,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String GATEWAY = "gateway";
+    public static final String GLOBAL_SEARCH = "globalsearch";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
     public static final String GROUP_ID = "groupid";

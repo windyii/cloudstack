@@ -832,11 +832,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Object pod = null;
         Object hostId = null;
         Object storageId = null;
+        Object globalSearch = null;
         if (cmd instanceof ListVMsCmdByAdmin) {
             ListVMsCmdByAdmin adCmd = (ListVMsCmdByAdmin)cmd;
             pod = adCmd.getPodId();
             hostId = adCmd.getHostId();
             storageId = adCmd.getStorageId();
+            globalSearch = adCmd.getGlobalSearch();
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
@@ -894,7 +896,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         SearchCriteria<UserVmJoinVO> sc = sb.create();
 
         // building ACL condition
-        if (hostId != null) {
+        if (hostId != null || globalSearch != null) {
             listProjectResourcesCriteria = null;
         }
         _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,

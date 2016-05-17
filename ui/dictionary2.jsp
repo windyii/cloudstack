@@ -202,6 +202,7 @@ $.extend(dictionary, {
 'label.vcipaddress': '<fmt:message key="label.vcipaddress" />',
 'label.version': '<fmt:message key="label.version" />',
 'label.view.all': '<fmt:message key="label.view.all" />',
+'label.view.all.include.project': '<fmt:message key="label.view.all.include.project" />',
 'label.view.console': '<fmt:message key="label.view.console" />',
 'label.view': '<fmt:message key="label.view" />',
 'label.viewing': '<fmt:message key="label.viewing" />',

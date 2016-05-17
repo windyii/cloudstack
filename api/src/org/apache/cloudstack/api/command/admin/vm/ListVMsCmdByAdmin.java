@@ -51,6 +51,9 @@ public class ListVMsCmdByAdmin extends ListVMsCmd {
             description="the storage ID where vm's volumes belong to")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.GLOBAL_SEARCH, type = CommandType.BOOLEAN,
+            description = "list vm resources include default view and project view")
+    private Boolean globalSearch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -66,6 +69,10 @@ public class ListVMsCmdByAdmin extends ListVMsCmd {
 
     public Long getStorageId() {
         return storageId;
+    }
+
+    public Boolean getGlobalSearch() {
+        return globalSearch;
     }
 
 }

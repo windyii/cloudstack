@@ -143,6 +143,15 @@
                             return false;
                     },
                     label: 'state.Destroyed'
+                },
+                globalsearch: {
+                    preFilter: function(args) {
+                        if (isAdmin() && !cloudStack.context.projects)
+                            return true;
+                        else
+                            return false;
+                    },
+                    label: 'label.view.all.include.project'
                 }
             },
             preFilter: function(args) {
@@ -321,6 +330,11 @@
                             case "destroyed":
                                 $.extend(data, {
                                     state: 'Destroyed'
+                                });
+                                break;
+                            case "globalsearch":
+                                $.extend(data, {
+                                    globalsearch: 'true'
                                 });
                                 break;
                         }
