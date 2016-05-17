@@ -93,10 +93,12 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.template.TemplateManager;
@@ -148,6 +150,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
+    @Inject
+    protected VMTemplateDao _templateDao;
     @Inject
     VolumeDetailsDao _volDetailDao;
     @Inject
@@ -240,6 +244,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 oldVol.get_iScsiName());
         if (templateId != null) {
             newVol.setTemplateId(templateId);
+            VMTemplateVO template = _templateDao.findById(templateId);
+            if (!template.getFormat().equals(ImageFormat.ISO)) {
+                newVol.setSize(template.getSize());
+            }
         } else {
             newVol.setTemplateId(oldVol.getTemplateId());
         }
