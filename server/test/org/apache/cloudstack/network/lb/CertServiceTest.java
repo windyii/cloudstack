@@ -126,17 +126,17 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        final Field chainField = _class.getDeclaredField("chain");
+        final Field chainField = klazz.getDeclaredField("chain");
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
 
@@ -177,17 +177,17 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        final Field passField = _class.getDeclaredField("password");
+        final Field passField = klazz.getDeclaredField("password");
         passField.setAccessible(true);
         passField.set(uploadCmd, password);
 
@@ -227,13 +227,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -269,17 +269,17 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        final Field chainField = _class.getDeclaredField("chain");
+        final Field chainField = klazz.getDeclaredField("chain");
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
 
@@ -321,17 +321,17 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        final Field chainField = _class.getDeclaredField("chain");
+        final Field chainField = klazz.getDeclaredField("chain");
         chainField.setAccessible(true);
         chainField.set(uploadCmd, chain);
 
@@ -371,17 +371,17 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
-        final Field passField = _class.getDeclaredField("password");
+        final Field passField = klazz.getDeclaredField("password");
         passField.setAccessible(true);
         passField.set(uploadCmd, password);
 
@@ -420,13 +420,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -463,13 +463,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -508,13 +508,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -551,13 +551,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -595,13 +595,13 @@ public class CertServiceTest {
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
-        final Class<?> _class = uploadCmd.getClass().getSuperclass();
+        final Class<?> klazz = uploadCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("cert");
+        final Field certField = klazz.getDeclaredField("cert");
         certField.setAccessible(true);
         certField.set(uploadCmd, cert);
 
-        final Field keyField = _class.getDeclaredField("key");
+        final Field keyField = klazz.getDeclaredField("key");
         keyField.setAccessible(true);
         keyField.set(uploadCmd, key);
 
@@ -645,9 +645,9 @@ public class CertServiceTest {
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();
-        final Class<?> _class = deleteCmd.getClass().getSuperclass();
+        final Class<?> klazz = deleteCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("id");
+        final Field certField = klazz.getDeclaredField("id");
         certField.setAccessible(true);
         certField.set(deleteCmd, certId);
 
@@ -690,9 +690,9 @@ public class CertServiceTest {
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();
-        final Class<?> _class = deleteCmd.getClass().getSuperclass();
+        final Class<?> klazz = deleteCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("id");
+        final Field certField = klazz.getDeclaredField("id");
         certField.setAccessible(true);
         certField.set(deleteCmd, certId);
 
@@ -730,9 +730,9 @@ public class CertServiceTest {
 
         //creating the command
         final DeleteSslCertCmd deleteCmd = new DeleteSslCertCmdExtn();
-        final Class<?> _class = deleteCmd.getClass().getSuperclass();
+        final Class<?> klazz = deleteCmd.getClass().getSuperclass();
 
-        final Field certField = _class.getDeclaredField("id");
+        final Field certField = klazz.getDeclaredField("id");
         certField.setAccessible(true);
         certField.set(deleteCmd, certId);
 

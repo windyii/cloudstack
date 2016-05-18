@@ -979,11 +979,11 @@ public class NetscalerResource implements ServerResource {
             final long nsServiceWaitMilliSeconds = 60000;
             while (System.currentTimeMillis() - startTick < nsServiceWaitMilliSeconds) {
                 try {
-                    final nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
-                    _netscalerService.set_certvalidation(false);
-                    _netscalerService.set_hostnameverification(false);
-                    _netscalerService.set_credential(username, password);
-                    apiCallResult = _netscalerService.login();
+                    final nitro_service netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
+                    netscalerService.set_certvalidation(false);
+                    netscalerService.set_hostnameverification(false);
+                    netscalerService.set_credential(username, password);
+                    apiCallResult = netscalerService.login();
                     if (apiCallResult.errorcode == 0) {
                         nsServiceUp = true;
                         break;
@@ -2273,10 +2273,10 @@ public class NetscalerResource implements ServerResource {
 
             // remove subnet IP
             try {
-                final nsip _vlanSelfIp = new nsip();
-                _vlanSelfIp.set_ipaddress(vlanSelfIp);
+                final nsip tmpVlanSelfIp = new nsip();
+                tmpVlanSelfIp.set_ipaddress(vlanSelfIp);
 
-                final nsip subnetIp = nsip.get(_netscalerService, _vlanSelfIp);
+                final nsip subnetIp = nsip.get(_netscalerService, tmpVlanSelfIp);
                 apiCallResult = nsip.delete(_netscalerService, subnetIp);
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException("Failed to remove subnet ip:" + vlanSelfIp + " from the NetScaler device due to" + apiCallResult.message);
@@ -2323,10 +2323,10 @@ public class NetscalerResource implements ServerResource {
 
     private boolean nsSnipExists(final String subnetIp) throws ExecutionException {
         try {
-            final nsip _subnetIp = new nsip();
-            _subnetIp.set_ipaddress(subnetIp);
+            final nsip tmpSubnetIp = new nsip();
+            tmpSubnetIp.set_ipaddress(subnetIp);
 
-            final nsip snip = nsip.get(_netscalerService, _subnetIp);
+            final nsip snip = nsip.get(_netscalerService, tmpSubnetIp);
             return snip != null;
         } catch (final nitro_exception e) {
             if (e.getErrorCode() == NitroError.NS_RESOURCE_NOT_EXISTS) {
