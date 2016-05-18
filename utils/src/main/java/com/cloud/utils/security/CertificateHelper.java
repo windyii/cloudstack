@@ -38,13 +38,16 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.binary.Base64;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 import com.cloud.utils.Ternary;
-import org.bouncycastle.openssl.PEMReader;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class CertificateHelper {
     public static byte[] buildAndSaveKeystore(String alias, String cert, String privateKey, String storePassword) throws KeyStoreException, CertificateException,
@@ -117,20 +120,31 @@ public class CertificateHelper {
         return kf.generatePrivate(keysp);
     }
 
-    public static List<Certificate> parseChain(String chain) throws IOException {
+    public static List<Certificate> parseChain(String chain) throws IOException, CertificateException {
 
-        List<Certificate> certs = new ArrayList<Certificate>();
-        PEMReader reader = new PEMReader(new StringReader(chain));
+        final List<Certificate> certs = new ArrayList<Certificate>();
+        try(final PemReader pemReader = new PemReader(new StringReader(chain));)
+        {
+            Certificate cert = null;
+            final PemObject pemObject = pemReader.readPemObject();
+            final ByteArrayInputStream bais = new ByteArrayInputStream(pemObject.getContent());
+            final CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
 
-        Certificate crt = null;
-
-        while ((crt = (Certificate)reader.readObject()) != null) {
-            if (crt instanceof X509Certificate) {
-                certs.add(crt);
+            Collection<? extends Certificate> c = certificateFactory.generateCertificates(bais);
+            Iterator<? extends Certificate> i = c.iterator();
+            while (i.hasNext()) {
+                cert = i.next();
+                if (cert instanceof X509Certificate) {
+                    certs.add(cert);
+                }
+            }
+            if (certs.size() == 0) {
+                throw new IllegalArgumentException("Unable to decode certificate chain");
             }
         }
-        if (certs.size() == 0)
-            throw new IllegalArgumentException("Unable to decode certificate chain");
+        finally {
+            // just close the pemReader
+        }
 
         return certs;
     }
@@ -145,18 +159,18 @@ public class CertificateHelper {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] data = md.digest(cert.getEncoded());
 
-            for (int i = 0; i < data.length; i++) {
+            for (final byte element : data) {
                 if (buffer.length() > 0) {
                     buffer.append(":");
                 }
 
-                buffer.append(HEX[(0xF0 & data[i]) >>> 4]);
-                buffer.append(HEX[0x0F & data[i]]);
+                buffer.append(HEX[(0xF0 & element) >>> 4]);
+                buffer.append(HEX[0x0F & element]);
             }
 
-        } catch (CertificateEncodingException e) {
+        } catch (final CertificateEncodingException e) {
             throw new CloudRuntimeException("Bad certificate encoding");
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new CloudRuntimeException("Bad certificate algorithm");
         }
 

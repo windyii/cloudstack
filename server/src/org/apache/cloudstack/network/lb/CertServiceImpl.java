@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -34,11 +34,15 @@ import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -60,11 +64,11 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -83,6 +87,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.security.CertificateHelper;
 
 @Local(value = {CertService.class})
 public class CertServiceImpl implements CertService {
@@ -278,13 +283,13 @@ public class CertServiceImpl implements CertService {
 
         try {
             cert = parseCertificate(certInput);
-            key = parsePrivateKey(keyInput, password);
+            key = parsePrivateKey(keyInput);
 
             if (chainInput != null) {
-                chain = parseChain(chainInput);
+                chain = CertificateHelper.parseChain(chainInput);
             }
 
-        } catch (IOException e) {
+        } catch (final IOException | CertificateException e) {
             throw new IllegalArgumentException("Parsing certificate/key failed: " + e.getMessage(), e);
         }
 
@@ -400,8 +405,8 @@ public class CertServiceImpl implements CertService {
 
             X509Certificate xCert = (X509Certificate)c;
 
-            Principal subject = xCert.getSubjectDN();
-            Principal issuer = xCert.getIssuerDN();
+            xCert.getSubjectDN();
+            xCert.getIssuerDN();
 
            anchors.add(new TrustAnchor(xCert, null));
         }
@@ -429,60 +434,42 @@ public class CertServiceImpl implements CertService {
 
     }
 
-    public PrivateKey parsePrivateKey(String key, String password) throws IOException {
-
-        PasswordFinder pGet = null;
-
-        if (password != null)
-            pGet = new KeyPassword(password.toCharArray());
-
-        PEMReader privateKey = new PEMReader(new StringReader(key), pGet);
-        Object obj = null;
-        try {
-            obj = privateKey.readObject();
-        } finally {
-            IOUtils.closeQuietly(privateKey);
-        }
-
-        try {
-
-            if (obj instanceof KeyPair)
-                return ((KeyPair)obj).getPrivate();
-
-            return (PrivateKey)obj;
-
-        } catch (Exception e) {
+    public PrivateKey parsePrivateKey(final String key) throws IOException {
+        try (final PemReader pemReader = new PemReader(new StringReader(key));) {
+            final PemObject pemObject = pemReader.readPemObject();
+            final byte[] content = pemObject.getContent();
+            final PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
+            final KeyFactory factory = KeyFactory.getInstance("RSA", "BC");
+            return factory.generatePrivate(privKeySpec);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            throw new IOException("No encryption provider available.", e);
+        } catch (final InvalidKeySpecException e) {
             throw new IOException("Invalid Key format or invalid password.", e);
         }
     }
 
     public Certificate parseCertificate(String cert) {
-        PEMReader certPem = new PEMReader(new StringReader(cert));
+        final PemReader certPem = new PemReader(new StringReader(cert));
         try {
-            return (Certificate)certPem.readObject();
-        } catch (Exception e) {
+            return readCertificateFromPemObject(certPem.readPemObject());
+        } catch (final Exception e) {
             throw new InvalidParameterValueException("Invalid Certificate format. Expected X509 certificate. Failed due to " + e.getMessage());
         } finally {
             IOUtils.closeQuietly(certPem);
         }
     }
 
-    public List<Certificate> parseChain(String chain) throws IOException {
+    private Certificate readCertificateFromPemObject(PemObject pemObject) throws CertificateException {
+        final ByteArrayInputStream bais = new ByteArrayInputStream(pemObject.getContent());
+        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
 
-        List<Certificate> certs = new ArrayList<Certificate>();
-        PEMReader reader = new PEMReader(new StringReader(chain));
+        return certificateFactory.generateCertificate(bais);
+    }
 
-        Certificate crt = null;
 
-        while ((crt = (Certificate)reader.readObject()) != null) {
-            if (crt instanceof X509Certificate) {
-                certs.add(crt);
-            }
-        }
-        if (certs.size() == 0)
-            throw new IllegalArgumentException("Unable to decode certificate chain");
+    public List<Certificate> parseChain(String chain) throws IOException, CertificateException {
 
-        return certs;
+        return CertificateHelper.parseChain(chain);
     }
 
     String generateFingerPrint(Certificate cert) {
@@ -495,25 +482,31 @@ public class CertServiceImpl implements CertService {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] data = md.digest(cert.getEncoded());
 
-            for (int i = 0; i < data.length; i++) {
+            for (final byte element : data) {
                 if (buffer.length() > 0) {
                     buffer.append(":");
                 }
 
-                buffer.append(HEX[(0xF0 & data[i]) >>> 4]);
-                buffer.append(HEX[0x0F & data[i]]);
+                buffer.append(HEX[(0xF0 & element) >>> 4]);
+                buffer.append(HEX[0x0F & element]);
             }
 
-        } catch (CertificateEncodingException e) {
+        } catch (final CertificateEncodingException e) {
             throw new InvalidParameterValueException("Bad certificate encoding");
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new InvalidParameterValueException("Bad certificate algorithm");
         }
 
         return buffer.toString();
     }
 
-    public static class KeyPassword implements PasswordFinder {
+    /**
+     *
+     * @deprecated this is only for bcprov-jdk16
+     *
+     */
+    @Deprecated
+    public static class KeyPassword {
 
         boolean passwordRequested = false;
         char[] password;
@@ -522,7 +515,6 @@ public class CertServiceImpl implements CertService {
             password = word;
         }
 
-        @Override
         public char[] getPassword() {
             passwordRequested = true;
             return password;

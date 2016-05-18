@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.resource;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
@@ -27,9 +28,11 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.log4j.Logger;
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemWriter;
 
 import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.base.base_response;
@@ -75,11 +78,6 @@ import com.citrix.netscaler.nitro.util.filtervalue;
 import com.citrix.sdx.nitro.resource.config.mps.mps;
 import com.citrix.sdx.nitro.resource.config.ns.ns;
 import com.citrix.sdx.nitro.resource.config.xen.xen_nsvpx_image;
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-
-import org.apache.cloudstack.api.ApiConstants;
-
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -127,6 +125,8 @@ import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SshHelper;
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 
 class NitroError {
     static final int NS_RESOURCE_EXISTS = 273;
@@ -151,13 +151,11 @@ public class NetscalerResource implements ServerResource {
     private String _privateInterface;
     private Integer _numRetries;
     private String _guid;
-    private boolean _inline;
     private boolean _isSdx;
     private boolean _cloudManaged;
     private String _deviceName;
     private String _publicIP;
     private String _publicIPNetmask;
-    private String _publicIPGateway;
     private String _publicIPVlan;
 
     private static final Logger s_logger = Logger.getLogger(NetscalerResource.class);
@@ -233,8 +231,6 @@ public class NetscalerResource implements ServerResource {
 
             _isSdx = _deviceName.equalsIgnoreCase("NetscalerSDXLoadBalancer");
 
-            _inline = Boolean.parseBoolean((String)params.get("inline"));
-
             if (((String)params.get("cloudmanaged")) != null) {
                 _cloudManaged = Boolean.parseBoolean((String)params.get("cloudmanaged"));
             }
@@ -251,7 +247,6 @@ public class NetscalerResource implements ServerResource {
             //if the the device is cloud stack provisioned then make it part of the public network
             if (_cloudManaged) {
                 _publicIP = (String)params.get("publicip");
-                _publicIPGateway = (String)params.get("publicipgateway");
                 _publicIPNetmask = (String)params.get("publicipnetmask");
                 _publicIPVlan = (String)params.get("publicipvlan");
                 if ("untagged".equalsIgnoreCase(_publicIPVlan)) {
@@ -686,20 +681,26 @@ public class NetscalerResource implements ServerResource {
                                     String previousCertKeyName = null;
 
                                     if (sslCert.getChain() != null) {
-                                        List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
+                                        final List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
                                         // go from ROOT to intermediate CAs
-                                        for (Certificate intermediateCert : Lists.reverse(chainList)) {
+                                        for (final Certificate intermediateCert : Lists.reverse(chainList)) {
 
-                                            String fingerPrint = CertificateHelper.generateFingerPrint(intermediateCert);
-                                            String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
-                                            String intermediateCertFileName = intermediateCertKeyName + ".pem";
+                                            final String fingerPrint = CertificateHelper.generateFingerPrint(intermediateCert);
+                                            final String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
+                                            final String intermediateCertFileName = intermediateCertKeyName + ".pem";
 
                                             if (!SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName)) {
-                                                intermediateCert.getEncoded();
-                                                StringWriter textWriter = new StringWriter();
-                                                PEMWriter pemWriter = new PEMWriter(textWriter);
-                                                pemWriter.writeObject(intermediateCert);
-                                                pemWriter.flush();
+                                                final PemObject pemObject = new PemObject(intermediateCert.getType(), intermediateCert.getEncoded());
+                                                final StringWriter textWriter = new StringWriter();
+                                                try (final PemWriter pemWriter = new PemWriter(textWriter);) {
+                                                    pemWriter.writeObject(pemObject);
+                                                    pemWriter.flush();
+                                                } catch (IOException e) {
+                                                    if (s_logger.isDebugEnabled())
+                                                    {
+                                                        s_logger.debug("couldn't write PEM to a string", e);
+                                                    } // else just close the certDataStream
+                                                }
 
                                                 SSL.uploadCert(_ip, _username, _password, intermediateCertFileName, textWriter.toString().getBytes());
                                                 SSL.createSslCertKey(_netscalerService, intermediateCertFileName, null, intermediateCertKeyName, null);
@@ -713,18 +714,24 @@ public class NetscalerResource implements ServerResource {
                                         }
                                     }
 
-                                    String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                                    String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
-                                    String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
+                                    final String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                                    final String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                                    final String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
 
-                                    ByteArrayOutputStream certDataStream = new ByteArrayOutputStream();
-                                    certDataStream.write(sslCert.getCert().getBytes());
+                                    try (final ByteArrayOutputStream certDataStream = new ByteArrayOutputStream();) {
+                                        certDataStream.write(sslCert.getCert().getBytes());
 
-                                    if (!SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
+                                        if (!SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
 
-                                        SSL.uploadCert(_ip, _username, _password, certFilename, certDataStream.toByteArray());
-                                        SSL.uploadKey(_ip, _username, _password, keyFilename, sslCert.getKey().getBytes());
-                                        SSL.createSslCertKey(_netscalerService, certFilename, keyFilename, certKeyName, sslCert.getPassword());
+                                            SSL.uploadCert(_ip, _username, _password, certFilename, certDataStream.toByteArray());
+                                            SSL.uploadKey(_ip, _username, _password, keyFilename, sslCert.getKey().getBytes());
+                                            SSL.createSslCertKey(_netscalerService, certFilename, keyFilename, certKeyName, sslCert.getPassword());
+                                        }
+                                    } catch (IOException e) {
+                                        if (s_logger.isDebugEnabled())
+                                        {
+                                            s_logger.debug("couldn't open buffer for certificate", e);
+                                        } // else just close the certDataStream
                                     }
 
                                     if (previousCertKeyName != null && !SSL.certLinkExists(_netscalerService, certKeyName, previousCertKeyName)) {
@@ -1360,61 +1367,6 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
-        // enable 'gslbvserver' object representing a globally load balanced service
-        private static void enableVirtualServer(nitro_service client, String vserverName) throws ExecutionException {
-            try {
-                gslbvserver vserver = getVserverObject(client, vserverName);
-                if (vserver != null) {
-                    gslbvserver.enable(client, vserver);
-                }
-            } catch (Exception e) {
-                String errMsg = "Failed to enable GSLB virtual server: " + vserverName + " due to " + e.getMessage();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(errMsg);
-                }
-                throw new ExecutionException(errMsg);
-            }
-        }
-
-        // disable 'gslbvserver' object representing a globally load balanced service
-        private static void disableVirtualServer(nitro_service client, String vserverName) throws ExecutionException {
-            try {
-                gslbvserver vserver = getVserverObject(client, vserverName);
-                if (vserver != null) {
-                    gslbvserver.disable(client, vserver);
-                }
-            } catch (Exception e) {
-                String errMsg = "Failed to disable GSLB virtual server: " + vserverName + " due to " + e.getMessage();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(errMsg);
-                }
-                throw new ExecutionException(errMsg);
-            }
-        }
-
-        // update 'gslbvserver' object representing a globally load balanced service
-        private static void updateVirtualServer(nitro_service client, String vserverName, String lbMethod, String persistenceType, String serviceType)
-                throws ExecutionException {
-            try {
-                gslbvserver vServer = getVserverObject(client, vserverName);
-                if (vServer != null) {
-                    vServer.set_lbmethod(lbMethod);
-                    vServer.set_persistencetype(persistenceType);
-                    vServer.set_servicetype(serviceType);
-                    gslbvserver.update(client, vServer);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully updated GSLB virtual server: " + vserverName);
-                    }
-                }
-            } catch (Exception e) {
-                String errMsg = "Failed to update GSLB virtual server: " + vserverName + " due to " + e.getMessage();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(errMsg);
-                }
-                throw new ExecutionException(errMsg);
-            }
-        }
-
         // create, delete, update, get the GSLB services
         private static void createService(nitro_service client, String serviceName, String serviceType, String serviceIp, String servicePort, String siteName)
                 throws ExecutionException {
@@ -1481,32 +1433,6 @@ public class NetscalerResource implements ServerResource {
                 }
             } catch (Exception e) {
                 String errMsg = "Failed to delete service: " + serviceName + " due to " + e.getMessage();
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(errMsg);
-                }
-                throw new ExecutionException(errMsg);
-            }
-        }
-
-        private static void updateService(nitro_service client, String serviceName, String serviceType, String publicIp, String publicPort, String siteName)
-                throws ExecutionException {
-            try {
-                gslbservice service;
-                service = getServiceObject(client, serviceName);
-
-                if (service != null) {
-                    service.set_sitename(siteName);
-                    service.set_publicip(publicIp);
-                    service.set_publicport(Integer.getInteger(publicPort));
-                    service.set_servicename(serviceName);
-                    service.set_servicetype(serviceType);
-                    gslbservice.update(client, service);
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Successfully updated service: " + serviceName + " at site: " + siteName);
-                    }
-                }
-            } catch (Exception e) {
-                String errMsg = "Failed to update service: " + serviceName + " at site: " + siteName + "due to " + e.getMessage();
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(errMsg);
                 }
@@ -1839,25 +1765,6 @@ public class NetscalerResource implements ServerResource {
 
         }
 
-        public static void updateCertKey(nitro_service ns, String certKeyName, String cert, String key, String password) throws ExecutionException {
-            try {
-                sslcertkey certkey = sslcertkey.get(ns, certKeyName);
-                if (cert != null)
-                    certkey.set_cert(cert);
-                if (key != null)
-                    certkey.set_key(cert);
-                if (password != null)
-                    certkey.set_passplain(cert);
-
-                sslcertkey.change(ns, certkey);
-
-            } catch (nitro_exception e) {
-                throw new ExecutionException("Failed to update ssl on load balancer due to " + e.getMessage());
-            } catch (Exception e) {
-                throw new ExecutionException("Failed to update ssl on load balancer due to " + e.getMessage());
-            }
-        }
-
         private static void bindCertKeyToVserver(nitro_service ns, String certKeyName, String vserver) throws ExecutionException {
             s_logger.debug("Adding cert to netscaler");
 
@@ -1917,24 +1824,6 @@ public class NetscalerResource implements ServerResource {
                 throw new ExecutionException("Failed to enable ssl feature on load balancer due to " + e.getMessage());
             } catch (Exception e) {
                 throw new ExecutionException("Failed to enable ssl feature on load balancer due to " + e.getMessage());
-            }
-        }
-
-        public static boolean checkSslFeature(nitro_service ns) throws ExecutionException {
-            try {
-                String[] features = ns.get_enabled_features();
-                if (features != null) {
-                    for (String feature : features) {
-                        if (feature.equalsIgnoreCase("SSL")) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            } catch (nitro_exception e) {
-                throw new ExecutionException("Failed to check ssl feature on load balancer due to " + e.getMessage());
-            } catch (Exception e) {
-                throw new ExecutionException("Failed to check ssl feature on load balancer due to " + e.getMessage());
             }
         }
 
@@ -2954,7 +2843,6 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
-    @SuppressWarnings("static-access")
     private synchronized boolean createAutoScaleConfig(LoadBalancerTO loadBalancerTO) throws ExecutionException, Exception {
 
         String srcIp = loadBalancerTO.getSrcIp();
@@ -3010,7 +2898,6 @@ public class NetscalerResource implements ServerResource {
         return true;
     }
 
-    @SuppressWarnings("static-access")
     private synchronized boolean removeAutoScaleConfig(LoadBalancerTO loadBalancerTO) throws Exception, ExecutionException {
         String srcIp = loadBalancerTO.getSrcIp();
         int srcPort = loadBalancerTO.getSrcPort();
@@ -3052,7 +2939,6 @@ public class NetscalerResource implements ServerResource {
         return true;
     }
 
-    @SuppressWarnings("static-access")
     private synchronized boolean enableAutoScaleConfig(LoadBalancerTO loadBalancerTO, boolean isCleanUp) throws Exception {
         String vmGroupIdentifier = generateAutoScaleVmGroupIdentifier(loadBalancerTO);
         String srcIp = loadBalancerTO.getSrcIp();
@@ -3230,106 +3116,109 @@ public class NetscalerResource implements ServerResource {
                     long threshold = conditionTO.getThreshold();
 
                     StringBuilder conditionExpression = new StringBuilder();
-                    Formatter formatter = new Formatter(conditionExpression, Locale.US);
+                    try(Formatter formatter = new Formatter(conditionExpression, Locale.US);) {
 
-                    if (counterTO.getSource().equals("snmp")) {
-                        counterName = generateSnmpMetricName(counterName);
-                        if (snmpMetrics.size() == 0) {
+                        if (counterTO.getSource().equals("snmp")) {
+                            counterName = generateSnmpMetricName(counterName);
+                            if (snmpMetrics.size() == 0) {
                             // Create Metric Table
                             //add lb metricTable lb_metric_table
-                            lbmetrictable metricTable = new lbmetrictable();
-                            try {
-                                metricTable.set_metrictable(mtName);
-                                lbmetrictable.add(_netscalerService, metricTable);
-                            } catch (Exception e) {
+                                lbmetrictable metricTable = new lbmetrictable();
+                                try {
+                                    metricTable.set_metrictable(mtName);
+                                    lbmetrictable.add(_netscalerService, metricTable);
+                                } catch (Exception e) {
                                 // Ignore Exception on cleanup
-                                if (!isCleanUp)
-                                    throw e;
-                            }
+                                    if (!isCleanUp)
+                                        throw e;
+                                }
 
                             // Create Monitor
                             // add lb monitor lb_metric_table_mon LOAD -destPort 161 -snmpCommunity public -metricTable
                             // lb_metric_table -interval <policy_interval == 80% >
-                            lbmonitor monitor = new lbmonitor();
-                            try {
-                                monitor.set_monitorname(monitorName);
-                                monitor.set_type("LOAD");
-                                monitor.set_destport(snmpPort);
-                                monitor.set_snmpcommunity(snmpCommunity);
-                                monitor.set_metrictable(mtName);
-                                monitor.set_interval((int)(interval * 0.8));
-                                lbmonitor.add(_netscalerService, monitor);
-                            } catch (Exception e) {
+                                lbmonitor monitor = new lbmonitor();
+                                try {
+                                    monitor.set_monitorname(monitorName);
+                                    monitor.set_type("LOAD");
+                                    monitor.set_destport(snmpPort);
+                                    monitor.set_snmpcommunity(snmpCommunity);
+                                    monitor.set_metrictable(mtName);
+                                    monitor.set_interval((int)(interval * 0.8));
+                                    lbmonitor.add(_netscalerService, monitor);
+                                } catch (Exception e) {
                                 // Ignore Exception on cleanup
-                                if (!isCleanUp)
-                                    throw e;
-                            }
+                                    if (!isCleanUp)
+                                        throw e;
+                                }
 
                             // Bind monitor to servicegroup.
                             // bind lb monitor lb_metric_table_mon lb_autoscaleGroup -passive
-                            servicegroup_lbmonitor_binding servicegroup_monitor_binding = new servicegroup_lbmonitor_binding();
-                            try {
-                                servicegroup_monitor_binding.set_servicegroupname(serviceGroupName);
-                                servicegroup_monitor_binding.set_monitor_name(monitorName);
+                                servicegroup_lbmonitor_binding servicegroup_monitor_binding = new servicegroup_lbmonitor_binding();
+                                try {
+                                    servicegroup_monitor_binding.set_servicegroupname(serviceGroupName);
+                                    servicegroup_monitor_binding.set_monitor_name(monitorName);
 
                                 // Use the monitor for autoscaling purpose only.
                                 // Don't mark service members down when metric breaches threshold
-                                servicegroup_monitor_binding.set_passive(true);
+                                    servicegroup_monitor_binding.set_passive(true);
 
-                                servicegroup_lbmonitor_binding.add(_netscalerService, servicegroup_monitor_binding);
-                            } catch (Exception e) {
+                                    servicegroup_lbmonitor_binding.add(_netscalerService, servicegroup_monitor_binding);
+                                } catch (Exception e) {
                                 // Ignore Exception on cleanup
-                                if (!isCleanUp)
-                                    throw e;
+                                    if (!isCleanUp)
+                                        throw e;
+                                }
                             }
-                        }
 
-                        boolean newMetric = !snmpMetrics.containsKey(counterName);
-                        if (newMetric) {
-                            snmpMetrics.put(counterName, snmpCounterNumber++);
-                        }
+                            boolean newMetric = !snmpMetrics.containsKey(counterName);
+                            if (newMetric) {
+                                snmpMetrics.put(counterName, snmpCounterNumber++);
+                            }
 
-                        if (newMetric) {
+                            if (newMetric) {
                             // bind lb metricTable lb_metric_table mem 1.3.6.1.4.1.2021.11.9.0
-                            String counterOid = counterTO.getValue();
-                            lbmetrictable_metric_binding metrictable_metric_binding = new lbmetrictable_metric_binding();
-                            try {
-                                metrictable_metric_binding.set_metrictable(mtName);
-                                metrictable_metric_binding.set_metric(counterName);
-                                metrictable_metric_binding.set_Snmpoid(counterOid);
-                                lbmetrictable_metric_binding.add(_netscalerService, metrictable_metric_binding);
-                            } catch (Exception e) {
+                                String counterOid = counterTO.getValue();
+                                lbmetrictable_metric_binding metrictable_metric_binding = new lbmetrictable_metric_binding();
+                                try {
+                                    metrictable_metric_binding.set_metrictable(mtName);
+                                    metrictable_metric_binding.set_metric(counterName);
+                                    metrictable_metric_binding.set_Snmpoid(counterOid);
+                                    lbmetrictable_metric_binding.add(_netscalerService, metrictable_metric_binding);
+                                } catch (Exception e) {
                                 // Ignore Exception on cleanup
-                                if (!isCleanUp)
-                                    throw e;
-                            }
+                                    if (!isCleanUp)
+                                        throw e;
+                                }
 
-                            // bind lb monitor lb_metric_table_mon -metric cpu -metricThreshold 1
-                            lbmonitor_metric_binding monitor_metric_binding = new lbmonitor_metric_binding();
-                            ;
-                            try {
-                                monitor_metric_binding.set_monitorname(monitorName);
-                                monitor_metric_binding.set_metric(counterName);
-                                /*
-                                 * Setting it to max to make sure traffic is not affected due to 'LOAD' monitoring.
-                                 * For Ex. if CPU is tracked and CPU is greater than 80, it is still < than Integer.MAX_VALUE
-                                 * so traffic will continue to flow.
-                                 */
-                                monitor_metric_binding.set_metricthreshold(Integer.MAX_VALUE);
-                                lbmonitor_metric_binding.add(_netscalerService, monitor_metric_binding);
-                            } catch (Exception e) {
-                                // Ignore Exception on cleanup
-                                if (!isCleanUp)
-                                    throw e;
+                                // bind lb monitor lb_metric_table_mon -metric cpu -metricThreshold 1
+                                lbmonitor_metric_binding monitor_metric_binding = new lbmonitor_metric_binding();
+
+                                try {
+                                    monitor_metric_binding.set_monitorname(monitorName);
+                                    monitor_metric_binding.set_metric(counterName);
+                                    /*
+                                     * Setting it to max to make sure traffic is not affected due to 'LOAD' monitoring.
+                                     * For Ex. if CPU is tracked and CPU is greater than 80, it is still < than Integer.MAX_VALUE
+                                     * so traffic will continue to flow.
+                                     */
+                                    monitor_metric_binding.set_metricthreshold(Integer.MAX_VALUE);
+                                    lbmonitor_metric_binding.add(_netscalerService, monitor_metric_binding);
+                                } catch (Exception e) {
+                                    // Ignore Exception on cleanup
+                                    if (!isCleanUp)
+                                        throw e;
+                                }
                             }
+                            // SYS.VSERVER("abcd").SNMP_TABLE(0).AVERAGE_VALUE.GT(80)
+                            int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name
+                            // will be added as a param to SNMP_TABLE.
+                            formatter.format("SYS.VSERVER(\"%s\").SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)", nsVirtualServerName, counterIndex, operator, threshold);
+                        } else if (counterTO.getSource().equals("netscaler")) {
+                            //SYS.VSERVER("abcd").RESPTIME.GT(10)
+                            formatter.format("SYS.VSERVER(\"%s\").%s.%s(%d)", nsVirtualServerName, counterTO.getValue(), operator, threshold);
                         }
-                        // SYS.VSERVER("abcd").SNMP_TABLE(0).AVERAGE_VALUE.GT(80)
-                        int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name
-                        // will be added as a param to SNMP_TABLE.
-                        formatter.format("SYS.VSERVER(\"%s\").SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)", nsVirtualServerName, counterIndex, operator, threshold);
-                    } else if (counterTO.getSource().equals("netscaler")) {
-                        //SYS.VSERVER("abcd").RESPTIME.GT(10)
-                        formatter.format("SYS.VSERVER(\"%s\").%s.%s(%d)", nsVirtualServerName, counterTO.getValue(), operator, threshold);
+                    } finally {
+                        // closing formatter
                     }
                     if (policyExpression.length() != 0) {
                         policyExpression += " && ";
@@ -3371,7 +3260,6 @@ public class NetscalerResource implements ServerResource {
         return true;
     }
 
-    @SuppressWarnings("static-access")
     private synchronized boolean disableAutoScaleConfig(LoadBalancerTO loadBalancerTO, boolean isCleanUp) throws Exception {
 
         String vmGroupIdentifier = generateAutoScaleVmGroupIdentifier(loadBalancerTO);
