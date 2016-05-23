@@ -430,7 +430,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         }
 
         items = _haDao.listRunningHaWorkForVm(work.getInstanceId());
-        if (items.size() > 0) {
+        // Current HA work is running, so items.size is at least 1
+        if (items.size() > 1) {
             StringBuilder str = new StringBuilder("Waiting because there's HA work being executed on an item currently.  Work Ids =[");
             for (HaWorkVO item : items) {
                 str.append(item.getId()).append(", ");
@@ -796,7 +797,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         _maxRetries = NumbersUtil.parseInt(value, 5);
 
         value = params.get("time.between.failures");
-        _timeBetweenFailures = NumbersUtil.parseLong(value, 3600) * 1000;
+        _timeBetweenFailures = NumbersUtil.parseLong(value, 3600);
 
         value = params.get("time.between.cleanup");
         _timeBetweenCleanups = NumbersUtil.parseLong(value, 3600 * 24);
@@ -859,7 +860,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             s_logger.info("HA Cleanup Thread Running");
 
             try {
-                _haDao.cleanup(System.currentTimeMillis() - _timeBetweenFailures);
+                _haDao.cleanup(System.currentTimeMillis() - _timeBetweenFailures * 1000);
             } catch (Exception e) {
                 s_logger.warn("Error while cleaning up", e);
             }
