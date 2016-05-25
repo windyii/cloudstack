@@ -57,6 +57,7 @@ public interface CapacityManager {
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
+    void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost, boolean fromReserved);
 
     /**
      * @param hostId Id of the host to check capacity

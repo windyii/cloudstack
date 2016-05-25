@@ -1430,6 +1430,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                         vmReservation.setVolumeReservation(volumeReservationMap);
                     }
                     _reservationDao.persist(vmReservation);
+
+                    // Reserve capacity for the vm, temporarily set the host id.
+                    ((VMInstanceVO)vm).setHostId(plannedDestination.getHost().getId());
+                    _capacityMgr.allocateVmCapacity(vm, false, true);
+                    ((VMInstanceVO)vm).setHostId(null);
                     return vmReservation.getUuid();
                 }
 
@@ -1448,8 +1453,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         if (!status) {
             return false;
         }
-      State oldState = transition.getCurrentState();
-      State newState = transition.getToState();
+        State oldState = transition.getCurrentState();
+        State newState = transition.getToState();
+        if ((oldState == State.Starting) && (newState == State.Starting)) {
+            // release capacity for deploy planner reservation
+            VMReservationVO vmReservation = _reservationDao.findByVmId(vo.getId());
+            if ((vmReservation != null) && (vmReservation.getHostId() == vo.getHostId())) {
+                s_logger.debug("Release capacity for deploy planner reservation");
+                _capacityMgr.releaseVmCapacity(vo, true, false, vo.getHostId());
+            }
+        }
         if ((oldState == State.Starting) && (newState != State.Starting)) {
             // cleanup all VM reservation entries
             SearchCriteria<VMReservationVO> sc = _reservationDao.createSearchCriteria();

@@ -280,6 +280,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost) {
+        allocateVmCapacity(vm, fromLastHost, false);
+    }
+
+    @DB
+    @Override
+    public void allocateVmCapacity(VirtualMachine vm, final boolean fromLastHost, final boolean fromReserved) {
 
         final long hostId = vm.getHostId();
         HostVO host = _hostDao.findById(hostId);
@@ -325,12 +331,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     long freeMem = totalMem - (reservedMem + usedMem);
 
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("We are allocating VM, increasing the used capacity of this host:" + hostId);
+                        String usedOrReserved = fromReserved? "reserved" : "used";
+                        s_logger.debug("We are allocating VM, increasing the " + usedOrReserved + " capacity of this host:" + hostId);
                         s_logger.debug("Current Used CPU: " + usedCpu + " , Free CPU:" + freeCpu + " ,Requested CPU: " + cpu);
                         s_logger.debug("Current Used RAM: " + usedMem + " , Free RAM:" + freeMem + " ,Requested RAM: " + ram);
                     }
-                    capacityCpu.setUsedCapacity(usedCpu + cpu);
-                    capacityMem.setUsedCapacity(usedMem + ram);
+
+                    if (!fromReserved) {
+                        capacityCpu.setUsedCapacity(usedCpu + cpu);
+                        capacityMem.setUsedCapacity(usedMem + ram);
+                    } else {
+                        capacityCpu.setReservedCapacity(reservedCpu + cpu);
+                        capacityMem.setReservedCapacity(reservedMem + ram);
+                    }
 
                     if (fromLastHost) {
                         /* alloc from reserved */
@@ -849,7 +862,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 // free the message sent flag if it exists
                 userVM.setDetail(MESSAGE_RESERVED_CAPACITY_FREED_FLAG, "false");
                 _userVMDao.saveDetails(userVM);
-
             }
         }
 

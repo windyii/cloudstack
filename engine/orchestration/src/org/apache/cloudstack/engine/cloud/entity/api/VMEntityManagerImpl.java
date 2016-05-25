@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -115,6 +116,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     DeploymentPlanningManager _planningMgr;
+    @Inject
+    protected DataCenterDao _dcDao = null;
 
     @Override
     public VMEntityVO loadVirtualMachine(String vmId) {
@@ -188,31 +191,44 @@ public class VMEntityManagerImpl implements VMEntityManager {
         }
 
         while (true) {
+            // add zone lock to avoid over-allocation.
+            DataCenter zoneToLock = _dcDao.acquireInLockTable(vm.getDataCenterId());
+            if (zoneToLock == null) {
+                s_logger.info("Unable to lock zone: " + vm.getDataCenterId() + " for deployment, retrying");
+                continue;
+            }
+            s_logger.info("Got the lock for deployment");
+
             DeployDestination dest = null;
             try {
-                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse);
-            } catch (AffinityConflictException e) {
-                throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
-            }
-
-            if (dest != null) {
-                String reservationId = _dpMgr.finalizeReservation(dest, vmProfile, plan, exclude, plannerToUse);
-                if (reservationId != null) {
-                    return reservationId;
-                } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
-                    }
-                    exclude.addHost(dest.getHost().getId());
-                    continue;
+                try {
+                    dest = _dpMgr.planDeployment(vmProfile, plan, exclude, plannerToUse);
+                } catch (AffinityConflictException e) {
+                    throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
                 }
-            } else if (planChangedByReadyVolume) {
-                // we could not reserve in the Volume's cluster - let the deploy
-                // call retry it.
-                return UUID.randomUUID().toString();
-            } else {
-                throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
-                    areAffinityGroupsAssociated(vmProfile));
+
+                if (dest != null) {
+                    String reservationId = _dpMgr.finalizeReservation(dest, vmProfile, plan, exclude, plannerToUse);
+                    if (reservationId != null) {
+                        return reservationId;
+                    } else {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Cannot finalize the VM reservation for this destination found, retrying");
+                        }
+                        exclude.addHost(dest.getHost().getId());
+                        continue;
+                    }
+                } else if (planChangedByReadyVolume) {
+                    // we could not reserve in the Volume's cluster - let the deploy
+                    // call retry it.
+                    return UUID.randomUUID().toString();
+                } else {
+                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId(),
+                        areAffinityGroupsAssociated(vmProfile));
+                }
+            } finally {
+                _dcDao.releaseFromLockTable(zoneToLock.getId());
+                s_logger.info("Released the lock for deployment");
             }
         }
     }
