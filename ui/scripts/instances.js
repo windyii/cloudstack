@@ -169,9 +169,8 @@
                 instancename: {
                     label: 'label.internal.name'
                 },
-                displayname: {
-                    label: 'label.display.name',
-                    truncate: true
+                ipaddress: {
+                    label: 'label.ip.address'
                 },
                 zonename: {
                     label: 'label.zone.name'
@@ -369,6 +368,13 @@
                     data: data,
                     success: function(json) {
                         var items = json.listvirtualmachinesresponse.virtualmachine;
+                        if (items) {
+                            $.each(items, function(idx, vm) {
+                                if (vm.nic && vm.nic.length > 0 && vm.nic[0].ipaddress) {
+                                    items[idx].ipaddress = vm.nic[0].ipaddress;
+                                }
+                            });
+                        }
                         args.response.success({
                             data: items
                         });
