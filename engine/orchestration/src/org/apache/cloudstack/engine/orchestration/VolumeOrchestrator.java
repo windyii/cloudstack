@@ -61,6 +61,7 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -82,8 +83,10 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.storage.DataStoreRole;
@@ -132,6 +135,8 @@ import com.cloud.vm.dao.UserVmDao;
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VolumeOrchestrator.class);
 
+    private static final long CACHE_MODE_WRITE_THROUGH_POOL_SIZE = 16L * 1024L * 1024L * 1024L * 1024L;
+
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -168,6 +173,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     ConfigDepot _configDepot;
     @Inject
     HostDao _hostDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
     @Inject
     SnapshotService _snapshotSrv;
     @Inject
@@ -1331,7 +1338,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
-            DataTO volumeTO = volFactory.getVolume(vol.getId()).getTO();
+            VolumeObjectTO volumeTO = (VolumeObjectTO) volFactory.getVolume(vol.getId()).getTO();
+            Map<String, String> hostDetails = _hostDetailsDao.findDetails(dest.getHost().getId());
+            String hostOS = hostDetails.get("Host.OS");
+            String hostOSVersion = hostDetails.get("Host.OS.Version");
+            StoragePool storagePool = null;
+            if (vol.getPoolId() != null) {
+                storagePool = _storagePoolDao.findById(vol.getPoolId());
+                //when OS is centos6.* and pool size is greater than 16T(xfs), VM cannot start with cache mode none.
+                if (hostOS.equals("CentOS") && hostOSVersion.startsWith("6.")
+                        && storagePool.getCapacityBytes() > CACHE_MODE_WRITE_THROUGH_POOL_SIZE) {
+                    s_logger.debug("Host OS is Centos 6 and pool size is greater than 16T, so set cache mode as writethrough.");
+                    volumeTO.setCacheMode(DiskCacheMode.WRITETHROUGH);
+                }
+            }
             DiskTO disk = new DiskTO(volumeTO, vol.getDeviceId(), vol.getPath(), vol.getVolumeType());
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
             DataStore dataStore = dataStoreMgr.getDataStore(vol.getPoolId(), DataStoreRole.Primary);

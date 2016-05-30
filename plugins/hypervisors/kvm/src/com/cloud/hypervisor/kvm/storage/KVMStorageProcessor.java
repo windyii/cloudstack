@@ -1003,6 +1003,81 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    protected synchronized String attachDisk(Connect conn, boolean attach, String vmName, KVMPhysicalDisk attachingDisk, int devId, String cacheMode) throws LibvirtException,
+    InternalErrorException {
+        List<DiskDef> disks = null;
+        Domain dm = null;
+        DiskDef diskdef = null;
+        KVMStoragePool attachingPool = attachingDisk.getPool();
+        try {
+            if (!attach) {
+                dm = conn.domainLookupByName(vmName);
+                LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+                String xml = dm.getXMLDesc(0);
+                parser.parseDomainXML(xml);
+                disks = parser.getDisks();
+
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    if (resource.getHypervisorType() == Hypervisor.HypervisorType.LXC) {
+                        String device = resource.mapRbdDevice(attachingDisk);
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: "+device);
+                            attachingDisk.setPath(device);
+                        }
+                    }
+                }
+
+                for (DiskDef disk : disks) {
+                    String file = disk.getDiskPath();
+                    if (file != null && file.equalsIgnoreCase(attachingDisk.getPath())) {
+                        diskdef = disk;
+                        break;
+                    }
+                }
+                if (diskdef == null) {
+                    throw new InternalErrorException("disk: " + attachingDisk.getPath() + " is not attached before");
+                }
+            } else {
+                diskdef = new DiskDef();
+                if (attachingPool.getType() == StoragePoolType.RBD) {
+                    if(resource.getHypervisorType() == Hypervisor.HypervisorType.LXC){
+                        // For LXC, map image to host and then attach to Vm
+                        String device = resource.mapRbdDevice(attachingDisk);
+                        if (device != null) {
+                            s_logger.debug("RBD device on host is: "+device);
+                            diskdef.defBlockBasedDisk(device, devId, DiskDef.diskBus.VIRTIO);
+                        } else {
+                            throw new InternalErrorException("Error while mapping disk "+attachingDisk.getPath()+" on host");
+                        }
+                    } else {
+                        diskdef.defNetworkBasedDisk(attachingDisk.getPath(), attachingPool.getSourceHost(), attachingPool.getSourcePort(), attachingPool.getAuthUserName(),
+                                attachingPool.getUuid(), devId, DiskDef.diskBus.VIRTIO, diskProtocol.RBD, DiskDef.diskFmtType.RAW);
+                    }
+                } else if (attachingPool.getType() == StoragePoolType.Gluster) {
+                    String mountpoint = attachingPool.getLocalPath();
+                    String path = attachingDisk.getPath();
+                    String glusterVolume = attachingPool.getSourceDir().replace("/", "");
+                    diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
+                            null, devId, DiskDef.diskBus.VIRTIO, diskProtocol.GLUSTER, DiskDef.diskFmtType.QCOW2);
+                } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                    diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+                    if (cacheMode != null) {
+                        diskdef.setCacheMode(DiskDef.diskCacheMode.valueOf(cacheMode.toUpperCase()));
+                    }
+                } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, DiskDef.diskBus.VIRTIO);
+                }
+            }
+
+            String xml = diskdef.toString();
+            return attachOrDetachDevice(conn, attach, vmName, xml);
+        } finally {
+            if (dm != null) {
+                dm.free();
+            }
+        }
+    }
+
     @Override
     public Answer attachVolume(AttachCommand cmd) {
         DiskTO disk = cmd.getDisk();
@@ -1016,7 +1091,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
-            attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue());
+            String cacheMode = null;
+            if (vol.getCacheMode() != null) {
+                cacheMode = vol.getCacheMode().toString();
+            }
+            attachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), cacheMode);
 
             return new AttachAnswer(disk);
         } catch (LibvirtException e) {
