@@ -635,6 +635,7 @@ fi
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %{_datadir}/%{name}-management/setup/*.sql
 %{_datadir}/%{name}-management/setup/db/*.sql
+%{_datadir}/%{name}-management/setup/rrcloud/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
