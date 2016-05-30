@@ -39,6 +39,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
@@ -61,6 +62,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.projects.Project;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -243,16 +245,17 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         StringBuilder sb = null;
         if ((vms != null) && !vms.isEmpty()) {
             sb = new StringBuilder();
-            sb.append("  Starting HA on the following VMs: ");
+            sb.append("  Starting HA on the following VMs: \n");
             // collect list of vm names for the alert email
-            VMInstanceVO vm = vms.get(0);
-            if (vm.isHaEnabled()) {
-                sb.append(" " + vm);
-            }
-            for (int i = 1; i < vms.size(); i++) {
-                vm = vms.get(i);
+            for (int i = 0; i < vms.size(); i++) {
+                VMInstanceVO vm = vms.get(i);
+                String projectInfo = "Admin";
+                Project project = ApiDBUtils.findProjectByProjectAccountId(vm.getAccountId());
+                if (project != null) {
+                    projectInfo = project.getDisplayText();
+                }
                 if (vm.isHaEnabled()) {
-                    sb.append(" " + vm.getHostName());
+                    sb.append(vm + "\t" + vm.getHostName() + "\t" + vm.getPrivateIpAddress() + "\t" + projectInfo + "\n");
                 }
             }
         }
