@@ -138,7 +138,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             throw new ConfigurationException("Unable to find the managesnapshot.sh");
         }
 
-        _bbcpScriptsPath = Script.findScript(storageScriptsDir, "bbcpp.sh");
+        _bbcpScriptsPath = Script.findScript(storageScriptsDir, "bbcp.sh");
         if (_bbcpScriptsPath == null) {
             throw new ConfigurationException("Unable to find the bbcp.sh");
         }
