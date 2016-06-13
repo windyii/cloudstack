@@ -791,7 +791,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 }
                 msg.setSubject(subject);
                 msg.setSentDate(new Date());
-                msg.setContent(content, "text/plain");
+                msg.setContent(content, "text/plain;charset=utf-8");
                 msg.saveChanges();
 
                 SMTPTransport smtpTrans = null;

@@ -255,7 +255,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     projectInfo = project.getDisplayText();
                 }
                 if (vm.isHaEnabled()) {
-                    sb.append(vm + "\t" + vm.getHostName() + "\t" + vm.getPrivateIpAddress() + "\t" + projectInfo + "\n");
+                    sb.append(vm.getPrivateIpAddress() + "\n");
                 }
             }
         }
