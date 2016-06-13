@@ -33,6 +33,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.FastCopyCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
@@ -228,6 +229,12 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer forgetObject(ForgetObjectCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(FastCopyCommand cmd) {
         // TODO Auto-generated method stub
         return null;
     }

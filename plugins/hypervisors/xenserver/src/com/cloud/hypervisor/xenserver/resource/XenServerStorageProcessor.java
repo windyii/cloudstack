@@ -41,6 +41,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.FastCopyCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectAnswer;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
@@ -1552,5 +1553,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to introduce object", e);
             return new Answer(cmd, false, e.toString());
         }
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(FastCopyCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

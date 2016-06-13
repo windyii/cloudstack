@@ -57,6 +57,7 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.FastCopyCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -2224,5 +2225,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
+    }
+
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(FastCopyCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
