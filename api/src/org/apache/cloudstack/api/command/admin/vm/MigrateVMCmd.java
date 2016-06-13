@@ -77,6 +77,12 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
+    @Parameter(name = ApiConstants.START_VM,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "Start the VM after migration")
+    private Boolean startVm;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +99,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         return storageId;
     }
 
+    public boolean getStartVm() {
+        return (startVm != null) ? startVm : false;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -163,7 +172,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             if (getHostId() != null) {
                 migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
             } else if (getStoragePoolId() != null) {
-                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
+                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool, getStartVm());
             }
             if (migratedVm != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);

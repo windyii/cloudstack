@@ -1525,12 +1525,19 @@
                                             }
                                         });
                                     }
+                                },
+                                startvm: {
+                                    label: 'label.launch.vm',
+                                    isBoolean: true,
+                                    isChecked: false
                                 }
                             }
                         },
                         action: function(args) {
+                            var array1 = [];
+                            array1.push("&startvm=" + (args.data.startvm == "on"));
                             $.ajax({
-                                url: createURL("migrateVirtualMachine&storageid=" + args.data.storageId + "&virtualmachineid=" + args.context.instances[0].id),
+                                url: createURL("migrateVirtualMachine&storageid=" + args.data.storageId + "&virtualmachineid=" + args.context.instances[0].id + array1.join("")),
                                 dataType: "json",
                                 async: true,
                                 success: function(json) {

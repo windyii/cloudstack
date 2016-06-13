@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachAnswer;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.FastCopyCommand;
 import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -106,6 +107,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     private StorageLayer storageLayer;
     private String _createTmplPath;
     private String _manageSnapshotPath;
+    private String _bbcpScriptsPath;
     private int _cmdsTimeout;
 
     public KVMStorageProcessor(KVMStoragePoolManager storagePoolMgr, LibvirtComputingResource resource) {
@@ -134,6 +136,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         _manageSnapshotPath = Script.findScript(storageScriptsDir, "managesnapshot.sh");
         if (_manageSnapshotPath == null) {
             throw new ConfigurationException("Unable to find the managesnapshot.sh");
+        }
+
+        _bbcpScriptsPath = Script.findScript(storageScriptsDir, "bbcpp.sh");
+        if (_bbcpScriptsPath == null) {
+            throw new ConfigurationException("Unable to find the bbcp.sh");
         }
 
         String value = (String)params.get("cmds.timeout");
@@ -1350,4 +1357,23 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
+    @Override
+    public Answer copyVolumeFromPrimaryToPrimary(FastCopyCommand cmd) {
+        DataTO srcData = cmd.getSrcTO();
+        DataTO destData = cmd.getDestTO();
+        PrimaryDataStoreTO srcDataStore = (PrimaryDataStoreTO) srcData.getDataStore();
+        PrimaryDataStoreTO destDataStore = (PrimaryDataStoreTO) destData.getDataStore();
+        Script script = new Script(_bbcpScriptsPath, _cmdsTimeout, s_logger);
+        script.add("-f", srcDataStore.getPath() + "/" + srcData.getPath());
+        script.add("-u", "root");
+        script.add("-h", destDataStore.getHost());
+        script.add("-r", destDataStore.getPath());
+        script.add("-y", cmd.getDestHostPassword());
+        String result = script.execute();
+        if (result != null) {
+            s_logger.debug("Failed to bbcp disk: " + result);
+            return new Answer(cmd, false, result);
+        }
+        return new Answer(cmd);
+    }
 }

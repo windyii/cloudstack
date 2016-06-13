@@ -133,6 +133,7 @@ Requires: perl
 Requires: libvirt-python
 Requires: qemu-img
 Requires: qemu-kvm
+Requires: expect
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0

@@ -1758,7 +1758,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 //when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
-                vm.setLastHostId(null);
+                if (destPool.isLocal()) {
+                    String hostPublicIp = destPool.getHostAddress();
+                    HostVO destHostVO = _hostDao.findByPublicIp(hostPublicIp);
+                    vm.setLastHostId(destHostVO.getId());
+                } else {
+                    vm.setLastHostId(null);
+                }
                 vm.setPodIdToDeployIn(destPool.getPodId());
 
                 // If VM was cold migrated between clusters belonging to two different VMware DCs,

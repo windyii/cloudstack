@@ -3859,7 +3859,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool) {
+    public VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool, boolean startVm) {
         // access check - only root admin can migrate VM
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
@@ -3884,10 +3884,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("can only do storage migration on user vm");
         }
 
-        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
-        if (vols.size() > 1) {
-            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
-        }
+//        List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+//        if (vols.size() > 1) {
+//            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
+//        }
 
         // Check that Vm does not have VM Snapshots
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
@@ -3904,6 +3904,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
         }
         _itMgr.storageMigration(vm.getUuid(), destPool);
+        if (startVm) {
+            try{
+                _itMgr.advanceStart(vm.getUuid(), null, null);
+            }
+            catch (Exception e){
+                s_logger.error("Failed to start vm " + vmId + " after volume migration.");
+                throw new CloudRuntimeException(e.getMessage());
+            }
+        }
         return _vmDao.findById(vm.getId());
 
     }

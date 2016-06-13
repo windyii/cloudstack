@@ -1790,8 +1790,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     }
                 }
             }
-        } else {
-            throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
         }
 
         if (vm != null) {

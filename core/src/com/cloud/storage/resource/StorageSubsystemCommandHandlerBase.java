@@ -27,6 +27,7 @@ import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.FastCopyCommand;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
@@ -61,6 +62,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((DettachCommand)command);
         } else if (command instanceof IntroduceObjectCmd) {
             return processor.introduceObject((IntroduceObjectCmd)command);
+        } else if (command instanceof FastCopyCommand) {
+            return processor.copyVolumeFromPrimaryToPrimary((FastCopyCommand)command);
         }
         return new Answer((Command)command, false, "not implemented yet");
     }

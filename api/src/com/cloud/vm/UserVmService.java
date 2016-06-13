@@ -449,7 +449,7 @@ public interface UserVmService {
     UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException;
 
-    VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
+    VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool, boolean startVm);
 
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 

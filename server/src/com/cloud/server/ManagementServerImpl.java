@@ -1294,8 +1294,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (!_volumeMgr.volumeOnSharedStoragePool(volume)) {
-            s_logger.info("Volume " + volume + " is on local storage. It cannot be migrated to another pool.");
-            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+            s_logger.info("Volume " + volume + " is on local storage. It can migrated to other pools.");
+            StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
+            List<StoragePoolVO> allStoragePoolVOs = _poolDao.listByDataCenterId(volume.getDataCenterId());
+            List<StoragePoolVO> suitableStoragePoolVOs = allStoragePoolVOs;
+            suitableStoragePoolVOs.remove(srcVolumePool);
+            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allStoragePoolVOs, suitableStoragePoolVOs);
         }
 
         Long instanceId = volume.getInstanceId();
