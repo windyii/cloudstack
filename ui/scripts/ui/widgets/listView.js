@@ -1043,6 +1043,8 @@
                     ).appendTo($tbody)
                 ];
             }
+        } else {
+            $listView.data('end-of-table', false);
         }
 
         $tbody.find('tr.empty').remove();
