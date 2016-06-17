@@ -49,7 +49,10 @@ expect_cmds="
               "'"'"(yes/no)?"'"'"  {send "'"'"yes\r"'"'"; exp_continue}
               password:  {send "'"'"$password\r"'"'"; exp_continue}
               "'"'"Permission denied"'"'" {exit 3}
-          }"
+              "'"'"1 file copied at effectively"'"'" {exit}
+          }
+          exit 4"
+
 
 if [ ! -f $localfile ]; then
     echo "file doesn't exist"

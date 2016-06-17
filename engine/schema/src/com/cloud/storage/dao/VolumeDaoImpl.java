@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -620,7 +621,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             VolumeVO destVol = findById(destVolId);
             String uuid = srcVol.getUuid();
             Long instanceId = srcVol.getInstanceId();
-            srcVol.setUuid(null);
+            //Set uuid not null for source volume. So it can be deleted from ui.
+            srcVol.setUuid(UUID.randomUUID().toString());
             srcVol.setInstanceId(null);
             destVol.setUuid(uuid);
             destVol.setInstanceId(instanceId);

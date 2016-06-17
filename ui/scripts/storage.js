@@ -2180,6 +2180,9 @@
                 if (jsonObj.vmstate == "Stopped") {
                     allowedActions.push("createTemplate");
                 }
+                if (jsonObj.virtualmachineid == null) {
+                    allowedActions.push("remove");
+                }
             } else { //jsonObj.type == "DATADISK"
                 if (jsonObj.virtualmachineid != null) {
                     if (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped" || jsonObj.vmstate == "Destroyed") {

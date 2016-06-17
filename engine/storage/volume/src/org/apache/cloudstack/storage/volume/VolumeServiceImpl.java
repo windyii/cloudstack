@@ -1020,16 +1020,17 @@ public class VolumeServiceImpl implements VolumeService {
             srcVolume.processEvent(Event.OperationSuccessed);
             destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
             volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+            s_logger.debug("skip destroying source volume " + srcVolume.getId() + " from pool " + srcVolume.getPoolId());
             try {
-                destroyVolume(srcVolume.getId());
-                srcVolume = volFactory.getVolume(srcVolume.getId());
-                AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
-                // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
-                if (destroyFuture.get().isFailed()) {
-                    Thread.sleep(5 * 1000);
-                    destroyFuture = expungeVolumeAsync(srcVolume);
-                    destroyFuture.get();
-                }
+//                destroyVolume(srcVolume.getId());
+//                srcVolume = volFactory.getVolume(srcVolume.getId());
+//                AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
+//                // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
+//                if (destroyFuture.get().isFailed()) {
+//                    Thread.sleep(5 * 1000);
+//                    destroyFuture = expungeVolumeAsync(srcVolume);
+//                    destroyFuture.get();
+//                }
                 future.complete(res);
             } catch (Exception e) {
                 s_logger.debug("failed to clean up volume on storage", e);
