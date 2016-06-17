@@ -144,7 +144,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         String value = (String)params.get("cmds.timeout");
-        _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
+        _cmdsTimeout = NumbersUtil.parseInt(value, 3600 * 12) * 1000;
         return true;
     }
 
