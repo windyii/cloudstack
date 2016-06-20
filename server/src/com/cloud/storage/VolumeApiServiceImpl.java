@@ -1760,6 +1760,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
         if (destPool == null) {
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
+        } else {
+            //if destPool has the same path of volume, do not migrate.
+            List<VolumeVO> lstVolumes = _volsDao.findByPoolId(destPool.getId(), null);
+            for (VolumeVO temp : lstVolumes) {
+                if (temp.getPath().equals(vol.getPath())) {
+                    s_logger.debug("dest pool: " + destPool.getName() + " has the same path of volume: " + vol.getName());
+                    throw new CloudRuntimeException("dest pool: " + destPool.getName() + " has the same path of volume: " + vol.getName());
+                }
+            }
         }
 
         if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
