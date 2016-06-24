@@ -1033,7 +1033,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             //if destPool has the same path of volume, do not migrate.
             List<VolumeVO> lstVolumes = _volumeDao.findByPoolId(destPool.getId(), null);
             for (VolumeVO temp : lstVolumes) {
-                if (temp.getPath().equals(volume.getPath())) {
+                if (volume.getPath().equals(temp.getPath())) {
                     s_logger.debug("dest pool: " + destPool.getName() + " has the same path of volume: " + volume.getName());
                     throw new CloudRuntimeException("dest pool: " + destPool.getName() + " has the same path of volume: " + volume.getName());
                 }

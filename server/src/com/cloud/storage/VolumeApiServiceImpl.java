@@ -1764,7 +1764,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             //if destPool has the same path of volume, do not migrate.
             List<VolumeVO> lstVolumes = _volsDao.findByPoolId(destPool.getId(), null);
             for (VolumeVO temp : lstVolumes) {
-                if (temp.getPath().equals(vol.getPath())) {
+                if (vol.getPath().equals(temp.getPath())) {
                     s_logger.debug("dest pool: " + destPool.getName() + " has the same path of volume: " + vol.getName());
                     throw new CloudRuntimeException("dest pool: " + destPool.getName() + " has the same path of volume: " + vol.getName());
                 }

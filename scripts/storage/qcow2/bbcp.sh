@@ -44,7 +44,7 @@ fi
 
 expect_cmds="
           set timeout -1
-          spawn bbcp -v -4 -f -s 16 -w 8m $localfile $user@$host:$remotefile
+          spawn bbcp -v -4 -f -s 4 -w 256m $localfile $user@$host:$remotefile
           expect {
               "'"'"(yes/no)?"'"'"  {send "'"'"yes\r"'"'"; exp_continue}
               password:  {send "'"'"$password\r"'"'"; exp_continue}
