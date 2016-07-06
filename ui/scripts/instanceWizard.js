@@ -1017,6 +1017,7 @@
                             jobId: jid,
                             getUpdatedItem: function(json) {
                                 var item = json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                item.ipaddress = item.nic[0].ipaddress;
                                 if (item.password != null)
                                     alert("Password of new VM " + item.displayname + " is  " + item.password);
                                 return item;
