@@ -1,1 +1,0 @@
-insert into cloud.configuration values ("Advanced", "DEFAULT", "VirtualNetworkApplianceManagerImpl", "router.alerts.check.times", "3", "Times to check for alerts in Virtual Router.", "3", now(), "Global", 0);

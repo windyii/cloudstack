@@ -1,1 +1,0 @@
-insert into cloud.guest_os_hypervisor values (2344,"KVM","CentOS 7",246,"default","c37db7c6-e9d3-11e5-822b-0697c8000509","2016-03-14 10:59:03",null,0);

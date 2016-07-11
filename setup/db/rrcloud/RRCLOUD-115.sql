@@ -1,1 +1,0 @@
-ALTER TABLE cloud.op_ha_work ADD INDEX i_op_ha_work__vm_type ( vm_type );
