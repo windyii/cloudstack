@@ -2019,9 +2019,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String storageType = cmd.getStorageType();
         if (storageType != null) {
             if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
-                if(offerHA) {
-                    throw new InvalidParameterValueException("HA offering with local storage is not supported. ");
-                }
+//                if(offerHA) {
+//                    throw new InvalidParameterValueException("HA offering with local storage is not supported. ");
+//                }
                 localStorageRequired = true;
             } else if (!storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
                 throw new InvalidParameterValueException("Invalid storage type " + storageType + " specified, valid types are: 'local' and 'shared'");
