@@ -92,6 +92,51 @@ addVlan() {
 		ifconfig $vlanBr up
 	fi
 
+	# persist network config
+	if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$vlanDev ]
+	then
+		grep "release 7" /etc/redhat-release
+		if [ $? -eq 0 ]
+		then
+			cat <<EOF >/etc/sysconfig/network-scripts/ifcfg-$vlanDev
+NAME=$vlanDev
+DEVICE=$vlanDev
+VLAN=yes
+TYPE=Vlan
+PHYSDEV=$pif
+VLAN_ID=$vlanId
+BRIDGE=$vlanBr
+REORDER_HDR=0
+IPV4_FAILURE_FATAL=no
+IPV6INIT=no
+ONBOOT=yes
+EOF
+		else
+			cat <<EOF >/etc/sysconfig/network-scripts/ifcfg-$vlanDev
+DEVICE=$vlanDev
+BOOTPROTO=none
+ONBOOT=yes
+TYPE=Ethernet
+PEERDNS=yes
+USERCTL=no
+BRIDGE=$3
+VLAN=yes
+EOF
+		fi
+	fi
+	if [ ! -f /etc/sysconfig/network-scripts/ifcfg-$vlanBr ]
+	then
+		cat <<EOF >/etc/sysconfig/network-scripts/ifcfg-$vlanBr
+NAME=$vlanBr
+DEVICE=$vlanBr
+BOOTPROTO=none
+ONBOOT=yes
+TYPE=Bridge
+PEERDNS=yes
+USERCTL=no
+EOF
+	fi
+
 	return 0
 }
 
@@ -123,6 +168,9 @@ deleteVlan() {
 		printf "Failed to del bridge $vlanBr"
 		return 1
 	fi
+
+	# delete network config
+	rm -f /etc/sysconfig/network-scripts/ifcfg-$vlanDev /etc/sysconfig/network-scripts/ifcfg-$vlanBr
 
 	return 0
 	

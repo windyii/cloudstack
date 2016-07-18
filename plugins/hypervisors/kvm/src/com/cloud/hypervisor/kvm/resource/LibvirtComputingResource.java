@@ -1285,7 +1285,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
 
-            conn.domainCreateXML(domainXML, 0);
+            // persist and auto start the domain for user vm
+            if (vmName.startsWith("i-")) {
+                dm = conn.domainDefineXML(domainXML);
+                dm.setAutostart(true);
+                dm.create();
+            } else {
+                conn.domainCreateXML(domainXML, 0);
+            }
         } catch (final LibvirtException e) {
             throw e;
         }
