@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -360,6 +361,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ExecutorService _vmStopWorkExecuter = null;
 
     protected long _nodeId;
+
 
     @Override
     public void registerGuru(VirtualMachine.Type type, VirtualMachineGuru guru) {
@@ -988,7 +990,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("VM is being created in podId: " + vm.getPodIdToDeployIn());
                     }
-                    _networkMgr.prepare(vmProfile, dest, ctx);
+                    try {
+                        _networkMgr.prepare(vmProfile, dest, ctx);
+                    } catch (Exception netException) {
+                        // ignore VR exception if the user vm is ready to start again
+                        if (canVmStartWithoutPrepareNetwork(vm)) {
+                            s_logger.warn("Unable to prepare network for vm " + vm.getInstanceName() + ". Since vm was started before, continue to start", netException);
+                            _alertMgr.sendAlert(AlertType.ALERT_TYPE_USERVM, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                                    "Unable to prepare network for vm " + vm.getInstanceName(), "Since vm was started before, continue to start.  Please check logs.");
+                            resetNicProfile(vmProfile);
+                        } else {
+                            throw netException;
+                        }
+                    }
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         volumeMgr.prepare(vmProfile, dest);
                     }
@@ -4691,4 +4705,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         return workJob;
     }
+
+    private boolean canVmStartWithoutPrepareNetwork(VMInstanceVO vm) {
+        if (vm.getType() == VirtualMachine.Type.User && vm.getLastHostId() != null) {
+            List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
+            for (VolumeVO vol : vols) {
+                if (vol.getState() != Volume.State.Ready) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void resetNicProfile(VirtualMachineProfileImpl vmProfile) {
+        List<NicProfile> nicProfiles = new ArrayList<NicProfile>();
+        List<NicVO> nics = _nicsDao.listByVmId(vmProfile.getId());
+        for (NicVO nic : nics) {
+            Network network = _networkModel.getNetwork(nic.getNetworkId());
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null,
+                    _networkModel.isSecurityGroupSupportedInNetwork(network), _networkModel.getNetworkTag(vmProfile.getHypervisorType(), network));
+            nicProfiles.add(profile);
+        }
+
+        vmProfile.setNics(nicProfiles);
+    }
+
 }
