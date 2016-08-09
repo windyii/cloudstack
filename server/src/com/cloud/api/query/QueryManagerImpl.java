@@ -1811,6 +1811,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
         if (vmInstanceId != null) {
             sc.setParameters("instanceId", vmInstanceId);
+            sc.setParameters("accountType", (Short)null);
         }
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);
