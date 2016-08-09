@@ -43,6 +43,8 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.gpu.GPU;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.user.Account;
@@ -68,6 +70,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     public AccountManager _accountMgr;
     @Inject
     private UserVmDetailsDao _userVmDetailsDao;
+    @Inject
+    private HostDao hostDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -137,9 +141,19 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setZoneName(userVm.getDataCenterName());
 
         userVmResponse.setInstanceName(userVm.getInstanceName());
-        userVmResponse.setHostId(userVm.getHostUuid());
-        userVmResponse.setHostName(userVm.getHostName());
-        userVmResponse.setHostIpAddress(userVm.getHostIpAddress());
+        if (userVm.getHostUuid() != null) {
+            userVmResponse.setHostId(userVm.getHostUuid());
+            userVmResponse.setHostName(userVm.getHostName());
+            userVmResponse.setHostIpAddress(userVm.getHostIpAddress());
+        } else {
+            Long lastHostId = userVm.getLastHostId();
+            HostVO lastHostVO = hostDao.findById(lastHostId);
+            if (lastHostVO != null) {
+                userVmResponse.setHostId(lastHostVO.getUuid());
+                userVmResponse.setHostName(lastHostVO.getName());
+                userVmResponse.setHostIpAddress(lastHostVO.getPrivateIpAddress());
+            }
+        }
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.tmpl)) {
             userVmResponse.setTemplateId(userVm.getTemplateUuid());
